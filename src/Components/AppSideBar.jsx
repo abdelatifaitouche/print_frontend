@@ -14,14 +14,14 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
+} from "@/Components/ui/sidebar";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
+} from "@/Components/ui/collapsible";
+import { Separator } from "@/Components/ui/separator";
 import ProfileHeader from "./ProfileHeader";
 
 // Menu items.
