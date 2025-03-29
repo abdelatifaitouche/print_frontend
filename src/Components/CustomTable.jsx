@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
 } from "@/Components/ui/table";
 import { Button } from "./ui/button";
 
-function CustomTable() {
+function CustomTable({data}) {
   return (
     <div className="overflow-x-auto p-4">
       <Table>
@@ -27,19 +27,19 @@ function CustomTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[1, 2, 3, 4, 5].map((item, index) => {
+          {data?.map((item, index) => {
             return (
               <TableRow key={index}>
-                <TableCell className="font-medium">INV001</TableCell>
+                <TableCell className="font-medium"> {item.order_name}</TableCell>
                 <TableCell>Idriss Moula</TableCell>
                 <TableCell>Grant thornton</TableCell>
                 <TableCell>
                   <span className="inline-block bg-orange-50 border-2 border-orange-400 text-orange-400 rounded-full px-3 py-1 text-sm font-medium">
-                    Pending
+                    {item.status}
                   </span>
                 </TableCell>
                 <TableCell>2</TableCell>
-                <TableCell>25-01-2025</TableCell>
+                <TableCell>{item.created_at}</TableCell>
                 <TableCell><Button className={'bg-blue-300'}>Voir</Button></TableCell>
               </TableRow>
             );

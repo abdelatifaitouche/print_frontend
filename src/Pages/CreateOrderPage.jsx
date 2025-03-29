@@ -1,73 +1,60 @@
-import { Button } from "@/Components/ui/button";
-import { Input } from "@/Components/ui/input";
 import axios from "axios";
 import React, { useState } from "react";
 
 function CreateOrderPage() {
-  const [orderData, setOrderData] = useState({user : 1 , company : 1});
-  const [orderItemList, setOrderItemList] = useState([]);
+  const [order, setOrder] = useState({ items: [], user: 1, company: 1 });
 
-  // Handle order name change
- 
-
-  // Add a new blank order item
   const addOrderItem = () => {
-    setOrderItemList([...orderItemList, { item_name: "", file: "" }]);
+    setOrder((prev) => ({
+      ...prev,
+      items: [...prev.items, { item_name: "", file: null }],
+    }));
+    console.log(order);
   };
 
-  // Update a specific order item
-  const updateOrderItem = (index, field, value) => {
-    const updatedItems = [...orderItemList];
-    updatedItems[index][field] = value;
-    setOrderItemList(updatedItems);
+  const updateItemData = (index, field, value) => {
+    const updatedItem = [...order.items];
+    updatedItem[index][field] = value;
+
+    setOrder((prev) => ({ ...prev, items: updatedItem }));
   };
 
-  // Remove an order item by index
-  const removeOrderItem = (index) => {
-    const updatedItems = orderItemList.filter((_, i) => i !== index);
-    setOrderItemList(updatedItems);
-  };
-
-
-  const createOrderApi = ()=>{
-    axios.post("" , )
-  }
-
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({ ...orderData, items: orderItemList });
-    // Send data to backend here
+    console.log(order)
+    try {
+      axios
+        .post("http://127.0.0.1:8000/api/v1/orders/ordersList/", order , {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+        .then((response) => {
+          console.log(response);
+        })
+        .catch((errors) => {
+          console.log(errors);
+        });
+    } catch (errors) {
+      console.log(errors);
+    }
   };
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Ajouter une Commande</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        
-
-        {/* Order Items */}
-        {orderItemList.map((orderItem, index) => (
-          <OrderItemForm
-            key={index}
-            index={index}
-            orderItem={orderItem}
-            updateOrderItem={updateOrderItem}
-            removeOrderItem={removeOrderItem}
-          />
-        ))}
-
-        {/* Add Order Item Button */}
-        <div className="flex gap-2">
-          <Button type="button" onClick={addOrderItem} className="bg-green-500">
-            + Add Item
-          </Button>
-
-          {/* Submit Button */}
-          <Button type="submit" className="bg-blue-500">
-            Créer
-          </Button>
-        </div>
+      Create order
+      <button onClick={addOrderItem}>add</button>
+      <form enctype="multipart/form-data" onSubmit={handleSubmit}>
+        {order.items &&
+          order.items.map((item, index) => {
+            return (
+              <OrderItemForm
+                key={index}
+                item={item}
+                index={index}
+                updateItemData={updateItemData}
+              />
+            );
+          })}
+        <button type="submit">Create</button>
       </form>
     </div>
   );
@@ -75,32 +62,44 @@ function CreateOrderPage() {
 
 export default CreateOrderPage;
 
-// Order Item Component
-function OrderItemForm({ index, orderItem, updateOrderItem, removeOrderItem }) {
+function OrderItemForm({ item, index, updateItemData }) {
   return (
-    <div className="flex gap-2 items-center">
-      {/* Item Name Input */}
-      <Input
-        placeholder="Item Name"
-        value={orderItem.item_name}
-        onChange={(e) => updateOrderItem(index, "item_name", e.target.value)}
+    <div className="flex gap-2">
+      <input
+        placeholder="item name"
+        value={item.item_name}
+        onChange={(e) => {
+          updateItemData(index, "item_name", e.target.value);
+        }}
       />
 
-      {/* File Input */}
-      <Input
-        placeholder="File"
-        value={orderItem.file}
-        onChange={(e) => updateOrderItem(index, "file", e.target.value)}
-      />
-
-      {/* Remove Button */}
-      <Button
-        type="button"
-        onClick={() => removeOrderItem(index)}
-        className="bg-red-500"
-      >
-        🗑️
-      </Button>
+      <input id="file" type="file" onChange={(e)=>{
+        console.log(e.target.files[0])
+        updateItemData(index , 'file' , e.target.files[0])
+      }} />
     </div>
   );
 }
+
+/**
+ * Order :  {
+            "id": 4,
+            "items": [
+               OrderItem : {
+                    "id": 7,
+                    "item_name": "testing drive 6",
+                    "status": "pending",
+                    "order": 4
+                } ,
+                {
+                    "id": 7,
+                    "item_name": "testing drive 7",
+                    "status": "pending",
+                    "order": 4
+                }
+            ],
+            "status": "pending",
+            "user": 1,
+            "company": 1
+        }
+ */
