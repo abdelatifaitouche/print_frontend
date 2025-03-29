@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
-import { ChartContainer } from "@/components/ui/chart";
+import { ChartContainer } from "@/Components/ui/chart";
 
 const chartData = [
   { month: "January", desktop: 186, mobile: 80 },
