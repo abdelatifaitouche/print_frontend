@@ -7,20 +7,48 @@ import CreateOrderPage from "./Pages/CreateOrderPage";
 import LoginPage from "./Pages/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "sonner";
+import PrivateRoute from "./PrivateRoute";
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/" element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/Commandes" element={<Commandes />} />
-          <Route path="/Commandes/creer" element={<CreateOrderPage />} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Home />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/Commandes"
+            element={
+              <PrivateRoute>
+                <Commandes />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/Commandes/creer"
+            element={
+              <PrivateRoute>
+                <CreateOrderPage />
+              </PrivateRoute>
+            }
+          />
         </Route>
       </Routes>
-      <Toaster/>
-
+      <Toaster />
     </AuthProvider>
   );
 }

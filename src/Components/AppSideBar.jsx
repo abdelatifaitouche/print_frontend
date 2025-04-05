@@ -23,7 +23,7 @@ import {
 } from "@/Components/ui/collapsible";
 import { Separator } from "@/Components/ui/separator";
 import ProfileHeader from "./ProfileHeader";
-
+import AuthContext from "@/contexts/AuthContext";
 // Menu items.
 const items = [
   {
@@ -54,6 +54,7 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const {logout} = useContext(AuthContext)
   return (
     <Sidebar>
       <SidebarContent>
@@ -110,7 +111,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenuButton>
+      <SidebarMenuButton onClick={logout}>
           <Settings />
           <span>Logout</span>
         </SidebarMenuButton>
