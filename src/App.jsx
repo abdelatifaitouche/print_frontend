@@ -8,6 +8,7 @@ import LoginPage from "./Pages/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "sonner";
 import PrivateRoute from "./PrivateRoute";
+import OrderDetails from "./Pages/OrderDetails";
 
 function App() {
   return (
@@ -43,6 +44,14 @@ function App() {
             element={
               <PrivateRoute>
                 <CreateOrderPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/Commandes/OrderDetails/:id"
+            element={
+              <PrivateRoute>
+                <OrderDetails />
               </PrivateRoute>
             }
           />

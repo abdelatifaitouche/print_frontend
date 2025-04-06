@@ -1,5 +1,5 @@
 import AXIOS_CONFIG from "@/config/axiosConfig";
-import { createContext, useState , useEffect } from "react";
+import { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState(null);
 
   const login = async (e) => {
     e.preventDefault();
@@ -63,22 +64,35 @@ export const AuthProvider = ({ children }) => {
 
   let logout = async () => {
     //send a request to api/auth/logout
-    await AXIOS_CONFIG.post("auth/logout/" , null).then((response)=>{
-        if (response.status === 200){
-            setIsAuthenticated(false)
-            setTimeout(() => {
-                window.location.href = "auth/login"; // Hard refresh ensures cookies are cleared
-            }, 500);  // Wait 500ms before redirecting
-        
-        }
-    })
-}
+    await AXIOS_CONFIG.post("auth/logout/", null).then((response) => {
+      if (response.status === 200) {
+        setIsAuthenticated(false);
+        setTimeout(() => {
+          window.location.href = "/auth/login"; // Hard refresh ensures cookies are cleared
+        }, 500); // Wait 500ms before redirecting
+      }
+    });
+  };
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const response = await AXIOS_CONFIG.get("auth/role/");
+        setRole(response.data.user_role);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchRole();
+  }, []);
 
   let contextData = {
     login: login,
     isLoading: isLoading,
     isAuthenticated: isAuthenticated,
-    logout : logout
+    logout: logout,
+    role : role
   };
 
   return (
