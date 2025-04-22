@@ -8,19 +8,109 @@ import {
   FileText,
   Eye,
   Settings,
+  WindArrowDown,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { getOrderDetails } from "@/Services/OrdersService";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  deleteOrder,
+  getOrderDetails,
+  updateOrderItem,
+} from "@/Services/OrdersService";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import AXIOS_CONFIG from "@/config/axiosConfig";
+import axios from "axios";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/Components/ui/sheet";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/Components/ui/select";
+import { Label } from "@/Components/ui/label";
+import { Input } from "@/Components/ui/input";
+import { Button } from "@/Components/ui/button";
+import StatusBadge from "@/Components/StatusBadge";
 
 function OrderDetails() {
   // Sample order data - replace with your actual data fetching logic
 
   const [orderDatas, setOrderData] = useState(null);
+  const { id } = useParams();
+
+  const [userRole, setUserRole] = useState("admin");
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleDownload = async (fileId) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/v1/orders/download/${fileId}/`,
+        {
+          withCredentials: true,
+          responseType: "blob", // crucial to receive binary data
+        }
+      );
+
+      // Extract filename from content-disposition
+      const disposition = response.headers["content-disposition"];
+      console.log("disposition : ", disposition);
+      let filename = "downloaded-file";
+
+      if (disposition && disposition.includes("filename=")) {
+        const fileNameMatch = disposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          filename = fileNameMatch[1];
+        }
+      }
+
+      // Create blob link to download
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await getOrderDetails(33);
+        const response = await getOrderDetails(id);
         setOrderData(response);
       } catch (error) {
         console.log(error);
@@ -31,88 +121,6 @@ function OrderDetails() {
   }, []);
 
   const navigate = useNavigate();
-  const orderData = {
-    orderId: "ORD-7839",
-    orderDate: "March 30, 2025",
-    status: "Delivered",
-    customer: {
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-      phone: "+1 (555) 123-4567",
-    },
-    shippingAddress: {
-      street: "123 Main Street",
-      city: "San Francisco",
-      state: "CA",
-      zip: "94105",
-      country: "United States",
-    },
-    billingAddress: {
-      street: "123 Main Street",
-      city: "San Francisco",
-      state: "CA",
-      zip: "94105",
-      country: "United States",
-    },
-    payment: {
-      method: "Credit Card",
-      cardNumber: "**** **** **** 4242",
-      subtotal: 89.97,
-      shipping: 4.99,
-      tax: 7.65,
-      total: 102.61,
-    },
-    items: [
-      {
-        id: 1,
-        name: "Premium T-Shirt",
-        sku: "TS-1001",
-        price: 29.99,
-        quantity: 2,
-        image: "/api/placeholder/60/60",
-        file: {
-          name: "tshirt_design_spec.pdf",
-          size: "1.2 MB",
-          type: "application/pdf",
-        },
-      },
-      {
-        id: 2,
-        name: "Designer Jeans",
-        sku: "DJ-2050",
-        price: 59.99,
-        quantity: 1,
-        image: "/api/placeholder/60/60",
-        file: {
-          name: "jeans_care_instructions.pdf",
-          size: "842 KB",
-          type: "application/pdf",
-        },
-      },
-    ],
-    timeline: [
-      {
-        date: "Mar 30, 2025",
-        status: "Delivered",
-        description: "Package delivered to customer",
-      },
-      {
-        date: "Mar 28, 2025",
-        status: "Shipped",
-        description: "Package shipped via Express Delivery",
-      },
-      {
-        date: "Mar 27, 2025",
-        status: "Processing",
-        description: "Payment confirmed, preparing order",
-      },
-      {
-        date: "Mar 26, 2025",
-        status: "Placed",
-        description: "Order placed by customer",
-      },
-    ],
-  };
 
   // Function to handle file download (in a real app, this would trigger an actual download)
   const handleFileDownload = (file) => {
@@ -149,10 +157,38 @@ function OrderDetails() {
             </h1>
           </div>
           <div className="flex space-x-3">
-            <button className="flex items-center px-4 py-2 bg-blue-700 border border-gray-200 text-white rounded-lg shadow-sm hover:bg-blue-500">
-              <Settings size={18} className="mr-2" />
-              <span>Update</span>
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger className="mr-4 p-2 rounded-md bg-red-500 text-white shadow-sm hover:bg-red-300">
+                Delete
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    your account and remove your data from our servers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className={"bg-red-500"}
+                    onClick={async () => {
+                      try {
+                        await deleteOrder(id);
+                        toast.success("Order deleted successfully");
+                        navigate(-1);
+                      } catch (error) {
+                        toast.error("Failed to delete order");
+                      }
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <button className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50">
               <Download size={18} className="mr-2" />
               <span>Download</span>
@@ -203,8 +239,8 @@ function OrderDetails() {
               <div>
                 <h3 className="font-medium mb-2">Payment Method</h3>
                 <div className="text-gray-600">
-                  <div>{orderData.payment.method}</div>
-                  <div>{orderData.payment.cardNumber}</div>
+                  <div>CCP</div>
+                  <div>44445256555</div>
                 </div>
               </div>
             </div>
@@ -229,6 +265,9 @@ function OrderDetails() {
                   <th className="text-left px-6 py-3 text-sm text-gray-500 font-medium">
                     Status
                   </th>
+                  <th className="text-left px-6 py-3 text-sm text-gray-500 font-medium">
+                    Edit
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -236,34 +275,30 @@ function OrderDetails() {
                   <tr key={item.id}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-12 h-12 rounded object-cover mr-4"
-                        />
                         <span className="font-medium">{item.item_name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {item.file && (
+                      {item.google_drive_file_id && (
                         <div className="flex flex-col space-y-2">
                           <div className="flex items-center text-sm text-gray-500">
                             <FileText size={16} className="mr-2" />
-                            <span>{item.file}</span>
-                            <span className="ml-2 text-xs">
-                              ({item.file.size})
-                            </span>
+                            <span>{item.google_drive_file_id}</span>
                           </div>
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleFileDownload(item.file)}
+                              onClick={() =>
+                                handleDownload(item.google_drive_file_id)
+                              }
                               className="flex items-center text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
                             >
                               <Download size={12} className="mr-1" />
-                              Download
+                              {isLoading ? "Downloading ..." : "Download"}
                             </button>
                             <button
-                              onClick={() => handleFilePreview(item.file)}
+                              onClick={() =>
+                                handleFilePreview(item.google_drive_file_id)
+                              }
                               className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
                             >
                               <Eye size={12} className="mr-1" />
@@ -274,12 +309,63 @@ function OrderDetails() {
                       )}
                     </td>
                     <td className="px-6 py-4 ">
-                      <div className="flex items-center">
-                        <span className="flex items-center bg-green-50 text-green-600 px-3 py-1 rounded-full text-sm">
-                          <CheckCircle size={16} className="mr-1" />
-                          {item?.status}
-                        </span>
-                      </div>
+                    <StatusBadge status={item?.status}/>
+                    </td>
+                    <td className="px-6 py-4 ">
+                      <Sheet>
+                        <SheetTrigger className="flex items-center px-4 py-2 bg-blue-700 border border-gray-200 text-white rounded-lg shadow-sm hover:bg-blue-500">
+                          <Settings size={18} className="mr-2" />{" "}
+                          <span>Update</span>
+                        </SheetTrigger>
+                        <SheetContent>
+                          <SheetHeader>
+                            <SheetTitle>Are you absolutely sure?</SheetTitle>
+                            <SheetDescription>Update Item</SheetDescription>
+                          </SheetHeader>
+                          <div className="grid gap-4 p-4">
+                            <form>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                  htmlFor="status"
+                                  className={"text-right"}
+                                >
+                                  Status
+                                </Label>
+                                <Select id="status" defaultValue={item?.status} onChange={()=>{
+                                  
+                                }}>
+                                  <SelectTrigger className="w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="in_progress">
+                                      In Progress
+                                    </SelectItem>
+                                    <SelectItem value="pending">
+                                      Pending
+                                    </SelectItem>
+                                    <SelectItem value="printed">
+                                      Printed
+                                    </SelectItem>
+                                    <SelectItem value="cancelled">
+                                      Cancelled
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                onClick={() => {
+                                  updateOrderItem(item.id, {
+                                    status: "cancelled",
+                                  });
+                                }}
+                              >
+                                Update
+                              </Button>
+                            </form>
+                          </div>
+                        </SheetContent>
+                      </Sheet>
                     </td>
                   </tr>
                 ))}
@@ -289,39 +375,9 @@ function OrderDetails() {
         </div>
 
         {/* Order Timeline */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="font-medium mb-4">Order Timeline</h2>
-          <div className="space-y-6">
-            {orderData.timeline.map((event, index) => (
-              <div key={index} className="flex">
-                <div className="flex flex-col items-center mr-4">
-                  <div
-                    className={`rounded-full w-3 h-3 ${
-                      index === 0 ? "bg-green-500" : "bg-gray-300"
-                    }`}
-                  ></div>
-                  {index !== orderData.timeline.length - 1 && (
-                    <div className="h-16 w-px bg-gray-300 my-1"></div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between">
-                    <h3 className="font-medium">{event.status}</h3>
-                    <span className="text-gray-500">{event.date}</span>
-                  </div>
-                  <p className="text-gray-600 mt-1">{event.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
 export default OrderDetails;
-
-/**
- * <td className="px-6 py-4">${item.price.toFixed(2)}</td>
- */

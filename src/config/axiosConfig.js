@@ -7,7 +7,6 @@ import BASE_API_URL from './apiConfig'
 const AXIOS_CONFIG =  axios.create({
     baseURL : BASE_API_URL ,
     withCredentials : true , 
-    timeout : 10000 , 
     headers: {
       "Content-Type": "application/json",
     },

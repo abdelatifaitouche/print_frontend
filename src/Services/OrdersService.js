@@ -30,12 +30,49 @@ export const getOrderDetails = async (order_id) =>{
 
 
 
+export const deleteOrder = async (order_id) =>{
+    try{
+        const response = await AXIOS_CONFIG.delete(`orders/orderDetails/${order_id}`);
+        return response.data
+    }catch(error){
+        console.log(error)
+    }
+}
+
+
 
 
 
 const createOrder =  ()=>{
     try {
         //post request
+    }catch(error){
+        console.log(error)
+    }
+}
+
+
+
+
+export const getOrdersStats = async () =>{
+    try{    
+        
+        const response = await AXIOS_CONFIG.get('orders/ordersStats') ; 
+        return response
+    
+
+    }catch(error){
+        console.log(error)
+    }
+}
+
+
+
+export const updateOrderItem = async (order_id , data) => {
+    try{
+        const response = await AXIOS_CONFIG.patch(`orders/orderItem/orderItemDetails/${order_id}` , data)
+        console.log(response)
+        return response
     }catch(error){
         console.log(error)
     }

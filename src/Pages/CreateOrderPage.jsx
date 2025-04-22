@@ -1,9 +1,10 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { PlusCircle, Upload, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 
 function CreateOrderPage() {
-  const [order, setOrder] = useState({ items: [], user: 1, company: 1 });
+  const [order, setOrder] = useState({ items: []});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addOrderItem = () => {
@@ -30,10 +31,7 @@ function CreateOrderPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const formData = new FormData();
-    formData.append("user", order.user);
-    formData.append("company", order.company);
-    
+    const formData = new FormData();    
     order.items.forEach((item, index) => {
       formData.append(`items[${index}][item_name]`, item.item_name);
       formData.append(`items[${index}][file]`, item.file);
@@ -47,10 +45,12 @@ function CreateOrderPage() {
       .then((response) => {
         console.log(response);
         setIsSubmitting(false);
+        toast('Order created succesfuly')
       })
       .catch((errors) => {
         console.error(errors);
         setIsSubmitting(false);
+        toast('an error has occured please try later')
       });
   };
 

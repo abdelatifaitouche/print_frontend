@@ -5,7 +5,8 @@ const OrderDataCard = ({
   count = 156, 
   icon = "📦", 
   timeframe = "Today",
-  color = "blue" 
+  color = "blue" ,
+  data
 }) => {
   // Color variants
   const colorVariants = {
@@ -28,7 +29,7 @@ const OrderDataCard = ({
       </div>
       
       <div className="flex flex-col">
-        <h2 className="text-3xl font-bold text-gray-800">{count.toLocaleString()}</h2>
+        <h2 className="text-5xl font-bold text-gray-800">{data}</h2>
         <span className="text-sm text-gray-500 mt-1">{timeframe}</span>
       </div>
     </div>

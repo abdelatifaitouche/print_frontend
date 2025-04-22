@@ -1,6 +1,6 @@
 import { Calendar, Home, Inbox, Search, Settings, Users } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useContext } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useContext, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -50,11 +50,12 @@ const items = [
     title: "Settings",
     url: "/settings",
     icon: Settings,
-  }, 
+  },
 ];
 
 export function AppSidebar() {
-  const {logout} = useContext(AuthContext)
+  const { logout } = useContext(AuthContext);
+  const location = useLocation();
   return (
     <Sidebar>
       <SidebarContent>
@@ -67,7 +68,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem
+                  key={item.title}
+                  className={`sidebar-item ${
+                    location.pathname === item.url
+                      ? "bg-gray-400 text-gray-200 rounded-md pointer-events-none"
+                      : "hover:bg-gray-300 hover:text-gray-900"
+                  }`}
+                >
                   <SidebarMenuButton asChild>
                     <Link to={item.url}>
                       <item.icon />
@@ -111,7 +119,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-      <SidebarMenuButton onClick={logout}>
+        <SidebarMenuButton onClick={logout}>
           <Settings />
           <span>Logout</span>
         </SidebarMenuButton>
