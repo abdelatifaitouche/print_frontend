@@ -9,6 +9,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "sonner";
 import PrivateRoute from "./PrivateRoute";
 import OrderDetails from "./Pages/OrderDetails";
+import CompaniesPage from "./Pages/CRM/CompaniesPage";
+import CreateCompany from "./Pages/CRM/CreateCompany";
 
 function App() {
   return (
@@ -52,6 +54,22 @@ function App() {
             element={
               <PrivateRoute>
                 <OrderDetails />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/companies"
+            element={
+              <PrivateRoute>
+                <CompaniesPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/companies/create"
+            element={
+              <PrivateRoute>
+                <CreateCompany />
               </PrivateRoute>
             }
           />
