@@ -11,6 +11,7 @@ import PrivateRoute from "./PrivateRoute";
 import OrderDetails from "./Pages/OrderDetails";
 import CompaniesPage from "./Pages/CRM/CompaniesPage";
 import CreateCompany from "./Pages/CRM/CreateCompany";
+import UsersPageList from "./Pages/Users/UsersPageList";
 
 function App() {
   return (
@@ -70,6 +71,14 @@ function App() {
             element={
               <PrivateRoute>
                 <CreateCompany />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <PrivateRoute>
+                <UsersPageList />
               </PrivateRoute>
             }
           />
