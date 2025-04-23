@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Filter,
   Search,
+  Eye,
   SortDesc,
 } from "lucide-react";
 import {
@@ -234,28 +235,74 @@ const CompaniesTable = ({ data, pageSize = 5 }) => {
         <Table>
           <TableHeader>
             <TableRow className="bg-zinc-50 hover:bg-zinc-50">
-              <TableHead className="w-[150px] cursor-pointer" onClick={() => toggleSort("order_name")}>Company Name</TableHead>
-              <TableHead className="w-[150px] cursor-pointer" onClick={() => toggleSort("order_name")}>Company Email</TableHead>
-              <TableHead className="w-[150px] cursor-pointer" onClick={() => toggleSort("order_name")}>Address</TableHead>
-              <TableHead className="w-[150px] cursor-pointer" onClick={() => toggleSort("order_name")}>Phone</TableHead>
-              <TableHead className="w-[150px] cursor-pointer" onClick={() => toggleSort("order_name")}>Date joined</TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Company Name
+              </TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Company Email
+              </TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Address
+              </TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Phone
+              </TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Date joined
+              </TableHead>
+              <TableHead
+                className="w-[150px] cursor-pointer"
+                onClick={() => toggleSort("order_name")}
+              >
+                Details
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {
-                data.map((company , index)=>{
-                    return <TableRow key={index} className="hover:bg-zinc-50">
-                        <TableCell>{company.company_name}</TableCell>
-                        <TableCell>{company.contact_email}</TableCell>
-                        <TableCell>{company.address}</TableCell>
-                        <TableCell>{company.company_phone}</TableCell>
-                        <TableCell>{company.date_joined}</TableCell>
-                    </TableRow>
-                })
-            }
+            {data.map((company, index) => {
+              return (
+                <TableRow key={index} className="hover:bg-zinc-50">
+                  <TableCell>{company.company_name}</TableCell>
+                  <TableCell>{company.contact_email}</TableCell>
+                  <TableCell>{company.address}</TableCell>
+                  <TableCell>{company.company_phone}</TableCell>
+                  <TableCell>{company.date_joined}</TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => {
+                        //navigate to
+                        navigate(`/companies/companyDetails/${company.id}`, {
+                          state: { company },
+                        });
+                      }}
+                      size="sm"
+                      className="bg-teal-500 hover:bg-teal-600 text-white flex items-center gap-1"
+                    >
+                      <Eye size={14} />
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
-      </div>      
+      </div>
     </div>
   );
 };

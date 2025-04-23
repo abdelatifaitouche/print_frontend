@@ -25,3 +25,12 @@ export const createCompany = async (data)=>{
     })
 }
 
+
+export const getCompanyDetails = async (company_id) => {
+    try{
+        const response = await AXIOS_CONFIG.get(`companies/companyDetails/${company_id}`);
+        return response.data.response
+    }catch(error){
+        console.log(response)
+    }
+}

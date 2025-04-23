@@ -12,6 +12,7 @@ import OrderDetails from "./Pages/OrderDetails";
 import CompaniesPage from "./Pages/CRM/CompaniesPage";
 import CreateCompany from "./Pages/CRM/CreateCompany";
 import UsersPageList from "./Pages/Users/UsersPageList";
+import CompanyDetailPage from "./Pages/CRM/CompanyDetailPage";
 
 function App() {
   return (
@@ -74,6 +75,15 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/companies/companyDetails/:id"
+            element={
+              <PrivateRoute>
+                <CompanyDetailPage />
+              </PrivateRoute>
+            }
+          />
+          
           <Route
             path="/users"
             element={
