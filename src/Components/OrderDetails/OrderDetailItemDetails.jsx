@@ -36,6 +36,7 @@ import {
 } from "@/Components/ui/select";
 
 import axios from "axios";
+import AXIOS_CONFIG from "@/config/axiosConfig";
 
 function OrderDetailItemDetails({ item, onUpdateSuccess }) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -46,8 +47,8 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
   const handleDownload = async (fileId) => {
     setIsDownloading(true);
     try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/api/v1/orders/download/${fileId}/`,
+      const response = await AXIOS_CONFIG.get(
+        `orders/download/${fileId}/`,
         {
           withCredentials: true,
           responseType: "blob", // crucial to receive binary data
