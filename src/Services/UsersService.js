@@ -11,7 +11,7 @@ export default getUsers;
 
 export const createUser = (user_data) => {
   AXIOS_CONFIG.post("auth/createUser/", user_data)
-    .then((reponse) => {
+    .then((response) => {
         console.log(response)
     })
     .catch((error)=>{
