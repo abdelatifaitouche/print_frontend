@@ -9,7 +9,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@/Components/ui/breadcrumb";
 
 export default function Layout() {
   const location = useLocation();
