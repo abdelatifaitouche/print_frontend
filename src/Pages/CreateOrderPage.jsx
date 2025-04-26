@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { PlusCircle, Upload, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import AXIOS_CONFIG from "@/config/axiosConfig";
 
 function CreateOrderPage() {
   const [order, setOrder] = useState({ items: []});
@@ -37,8 +38,8 @@ function CreateOrderPage() {
       formData.append(`items[${index}][file]`, item.file);
     });
 
-    axios
-      .post("http://127.0.0.1:8000/api/v1/orders/ordersList/", formData, {
+    AXIOS_CONFIG
+      .post("orders/ordersList/", formData, {
         withCredentials : true , 
         headers: { "Content-Type": "multipart/form-data" },
       })
