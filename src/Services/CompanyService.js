@@ -34,3 +34,23 @@ export const getCompanyDetails = async (company_id) => {
         console.log(response)
     }
 }
+
+
+
+export const updateCompany = async (company_id , data) => {
+ await AXIOS_CONFIG.patch(`companies/companyDetails/${company_id}` , data).then((response)=>{
+    return response
+ }).catch((error)=>{
+    console.log(error)
+ })
+}
+
+
+
+export const deleteCompany = async (company_id) =>{
+    try{
+        
+    }catch(error){
+
+    }
+}

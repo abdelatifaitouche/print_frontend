@@ -13,6 +13,7 @@ import CompaniesPage from "./Pages/CRM/CompaniesPage";
 import CreateCompany from "./Pages/CRM/CreateCompany";
 import UsersPageList from "./Pages/Users/UsersPageList";
 import CompanyDetailPage from "./Pages/CRM/CompanyDetailPage";
+import CreateUserPage from "./Pages/Users/CreateUserPage";
 
 function App() {
   return (
@@ -83,12 +84,21 @@ function App() {
               </PrivateRoute>
             }
           />
-          
+
           <Route
             path="/users"
             element={
               <PrivateRoute>
                 <UsersPageList />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/users/create"
+            element={
+              <PrivateRoute>
+                <CreateUserPage />
               </PrivateRoute>
             }
           />

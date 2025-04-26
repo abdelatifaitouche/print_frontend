@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { Input } from "@/Components/ui/input";
 import { Button } from "@/Components/ui/button";
 import { createCompany } from "@/Services/CompanyService";
+import { toast } from "sonner";
 
 function CreateCompany() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ function CreateCompany() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
 
 
   const validateForm = () => {
@@ -58,16 +60,18 @@ function CreateCompany() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("are we here ?")
-    console.log(formData)
-
-    const validationErrors = validateForm();
-
+    
+    setIsSubmitting(true)
+    
     try {
         const response = await createCompany(formData);
+        toast.success('Company Created successfuly')
+        setIsSubmitting(false)
 
     }catch(error){
         console.log(error)
+        setIsSubmitting(false)
+
     }
 
 

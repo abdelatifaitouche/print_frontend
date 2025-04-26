@@ -1,21 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/ui/table";
-import { Button } from "@/Components/ui/button";
-import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, RefreshCw, UserPlus } from "lucide-react";
 import getUsers from "@/Services/UsersService";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/Components/ui/table";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/Components/ui/card";
+import { Skeleton } from "@/Components/ui/skeleton";
+import { Badge } from "@/Components/ui/badge";
 
 function UsersPageList() {
-  const [users, setUsers] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     try {
+      setIsRefreshing(true);
       const response = await getUsers();
       setUsers(response.users);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch users:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -23,59 +46,165 @@ function UsersPageList() {
     fetchUsers();
   }, []);
 
-  return (
-    <div className="p-8 space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-        <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-          <Plus size={18} />
-          Create New User
-        </Button>
-      </div>
+  const filteredUsers = users.filter((user) =>
+    Object.values(user).some(
+      (value) =>
+        value &&
+        value?.toString().toLowerCase().includes(searchTerm?.toLowerCase())
+    )
+  );
 
-      {/* Users Table */}
-      <div className="rounded-2xl border shadow-md overflow-hidden">
-        <Table className="w-full">
-          <TableHeader className="bg-gray-100">
-            <TableRow>
-              <TableHead className="text-gray-700 font-semibold text-sm px-6 py-3">Username</TableHead>
-              <TableHead className="text-gray-700 font-semibold text-sm px-6 py-3">Company</TableHead>
-              <TableHead className="text-gray-700 font-semibold text-sm px-6 py-3">Role</TableHead>
-              <TableHead className="text-gray-700 font-semibold text-sm px-6 py-3">Phone</TableHead>
-              <TableHead className="text-gray-700 font-semibold text-sm px-6 py-3">Email</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : users?.length > 0 ? (
-              users.map((user, index) => (
-                <TableRow
-                  key={index}
-                  className={index % 2 === 0 ? "bg-white" : "bg-gray-50 hover:bg-gray-100 transition"}
-                >
-                  <TableCell className="px-6 py-4">{user.username}</TableCell>
-                  <TableCell className="px-6 py-4">{user.company?.company_name}</TableCell>
-                  <TableCell className="px-6 py-4 capitalize">{user.role}</TableCell>
-                  <TableCell className="px-6 py-4">{user.phone_number}</TableCell>
-                  <TableCell className="px-6 py-4">{user.email}</TableCell>
+  const getRoleBadgeVariant = (role) => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+        return "success";
+      case "client":
+        return "secondary";
+      case "operator":
+        return "outline";
+      default:
+        return "default";
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl font-bold">User Management</CardTitle>
+              <CardDescription>
+                Manage your organization's users and permissions
+              </CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => navigate('/users/create')}
+                className="gap-2"
+                variant="default"
+              >
+                <UserPlus size={18} />
+                Add User
+              </Button>
+              <Button
+                onClick={fetchUsers}
+                variant="outline"
+                disabled={isRefreshing}
+                className="gap-2"
+              >
+                <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-lg border overflow-hidden">
+            <Table className="w-full">
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="w-[200px]">User</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                  No users found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-[120px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-[100px]" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-[80px]" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-[120px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Skeleton className="h-4 w-[60px] ml-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-sm font-medium">
+                              {user.username.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{user.username}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.company?.company_name || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{user.phone_number || "N/A"}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {user.email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/users/${user.id}`)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      {searchTerm ? "No matching users found" : "No users available"}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

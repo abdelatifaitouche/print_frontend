@@ -1,308 +1,315 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect , useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
   Filter,
   Search,
   Eye,
-  SortDesc,
+  ArrowUpDown,
+  X
 } from "lucide-react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/Components/ui/table";
-
-import { useNavigate } from "react-router-dom";
 import { Input } from "@/Components/ui/input";
 import { Button } from "@/Components/ui/button";
+import { Badge } from "@/Components/ui/badge";
+import { Skeleton } from "@/Components/ui/skeleton";
 
-const CompaniesTable = ({ data, pageSize = 5 }) => {
+const CompaniesTable = ({ data = [], onRowClick, isLoading = false }) => {
   const navigate = useNavigate();
-  const [filteredData, setFilteredData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "date_joined",
+    direction: "desc",
+  });
   const [filters, setFilters] = useState({
     status: "",
-    client: "",
-    company: "",
-  });
-  const [sorting, setSorting] = useState({
-    field: "created_at",
-    direction: "desc",
+    industry: "",
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const itemsPerPage = 10;
-
   // Format date to be more readable
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     }).format(date);
   };
 
-  // List of possible statuses for filter dropdown
-  const statuses = ["Pending", "Processing", "Completed", "Cancelled"];
-
-  // Apply filters and sorting whenever data or filters change
-  useEffect(() => {
-    if (!data) return;
-
-    // Apply filters
-    let result = [...data];
-
-    if (filters.status) {
-      result = result.filter(
-        (item) => item.status.toLowerCase() === filters.status.toLowerCase()
-      );
+  // Sort data
+  const sortedData = useMemo(() => {
+    let sortableData = [...data];
+    if (sortConfig.key) {
+      sortableData.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
     }
+    return sortableData;
+  }, [data, sortConfig]);
 
-    if (filters.client) {
-      result = result.filter((item) =>
-        // Replace with actual client field when available
-        "Idriss Moula".toLowerCase().includes(filters.client.toLowerCase())
-      );
-    }
+  // Filter data
+  const filteredData = useMemo(() => {
+    return sortedData.filter((company) => {
+      const matchesSearch = 
+        company.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.address?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (filters.company) {
-      result = result.filter((item) =>
-        // Replace with actual company field when available
-        "Grant thornton".toLowerCase().includes(filters.company.toLowerCase())
-      );
-    }
+      const matchesStatus = 
+        !filters.status || company.status?.toLowerCase() === filters.status.toLowerCase();
 
-    // Apply sorting
-    result.sort((a, b) => {
-      const fieldA = a[sorting.field];
-      const fieldB = b[sorting.field];
+      const matchesIndustry = 
+        !filters.industry || company.industry?.toLowerCase() === filters.industry.toLowerCase();
 
-      if (sorting.field === "created_at") {
-        const dateA = new Date(fieldA);
-        const dateB = new Date(fieldB);
-        return sorting.direction === "asc" ? dateA - dateB : dateB - dateA;
-      }
-
-      // String comparison for other fields
-      if (fieldA < fieldB) return sorting.direction === "asc" ? -1 : 1;
-      if (fieldA > fieldB) return sorting.direction === "asc" ? 1 : -1;
-      return 0;
+      return matchesSearch && matchesStatus && matchesIndustry;
     });
+  }, [sortedData, searchTerm, filters]);
 
-    setFilteredData(result);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [data, filters, sorting]);
-
-  // Calculate pagination
-  const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredData?.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  // Change page
-  const goToPage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
+  // Request sort
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
   };
 
-  // Toggle sort direction for a column
-  const toggleSort = (field) => {
-    setSorting({
-      field,
-      direction:
-        sorting.field === field && sorting.direction === "desc"
-          ? "asc"
-          : "desc",
-    });
+  // Get status badge variant
+  const getStatusVariant = (status) => {
+    switch (status?.toLowerCase()) {
+      case "active": return "default";
+      case "pending": return "secondary";
+      case "inactive": return "destructive";
+      default: return "outline";
+    }
   };
 
-  // Get status badge styling based on status
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      pending: "bg-yellow-50 border-yellow-400 text-yellow-600",
-      processing: "bg-blue-50 border-blue-400 text-blue-600",
-      completed: "bg-green-50 border-green-400 text-green-600",
-      cancelled: "bg-red-50 border-red-400 text-red-600",
-      default: "bg-zinc-50 border-zinc-400 text-zinc-600",
-    };
-
-    const statusKey = status?.toLowerCase() || "default";
-    return statusStyles[statusKey] || statusStyles.default;
+  // Clear filters
+  const clearFilters = () => {
+    setFilters({ status: "", industry: "" });
+    setSearchTerm("");
   };
 
   return (
-    <div className="overflow-hidden">
-      {/* Filters */}
-      <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-200">
+    <div className="space-y-4">
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative w-full sm:w-64">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search orders..."
-            className="pl-9 bg-white border-zinc-200"
-            onChange={(e) => setFilters({ ...filters, client: e.target.value })}
+            placeholder="Search companies..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
-            variant="outline"
+            variant={isFilterOpen ? "default" : "outline"}
             size="sm"
-            className="text-zinc-600 border-zinc-200"
+            className="gap-2"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-            <Filter size={16} className="mr-2" />
+            <Filter size={16} />
             Filters
+            {Object.values(filters).some(Boolean) && (
+              <Badge variant="secondary" className="px-1.5">
+                {Object.values(filters).filter(Boolean).length}
+              </Badge>
+            )}
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-zinc-600 border-zinc-200"
-            onClick={() => toggleSort("created_at")}
-          >
-            <SortDesc size={16} className="mr-2" />
-            {sorting.direction === "desc" ? "Newest First" : "Oldest First"}
-          </Button>
+          {Object.values(filters).some(Boolean) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={clearFilters}
+            >
+              <X size={16} className="mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Advanced Filters */}
       {isFilterOpen && (
-        <div className="p-4 bg-zinc-50 border-b border-zinc-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 bg-muted/50 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-600 mb-1">
-              Status
-            </label>
+            <label className="block text-sm font-medium mb-2">Status</label>
             <select
-              className="w-full p-2 border border-zinc-200 rounded-md bg-white"
+              className="w-full p-2 border rounded-md bg-background text-sm"
               value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
             >
               <option value="">All Statuses</option>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-600 mb-1">
-              Client
-            </label>
+            <label className="block text-sm font-medium mb-2">Industry</label>
             <Input
-              placeholder="Filter by client"
-              className="bg-white border-zinc-200"
-              value={filters.client}
-              onChange={(e) =>
-                setFilters({ ...filters, client: e.target.value })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-600 mb-1">
-              Company
-            </label>
-            <Input
-              placeholder="Filter by company"
-              className="bg-white border-zinc-200"
-              value={filters.company}
-              onChange={(e) =>
-                setFilters({ ...filters, company: e.target.value })
-              }
+              placeholder="Filter by industry"
+              value={filters.industry}
+              onChange={(e) => setFilters({...filters, industry: e.target.value})}
             />
           </div>
         </div>
       )}
-      <div className="overflow-x-auto">
+
+      {/* Table */}
+      <div className="rounded-lg border overflow-hidden">
         <Table>
-          <TableHeader>
-            <TableRow className="bg-zinc-50 hover:bg-zinc-50">
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/75"
+                onClick={() => requestSort("company_name")}
               >
-                Company Name
+                <div className="flex items-center gap-1">
+                  Company
+                  <ArrowUpDown size={14} className="text-muted-foreground" />
+                </div>
               </TableHead>
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
+              <TableHead>Contact</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/75"
+                onClick={() => requestSort("date_joined")}
               >
-                Company Email
+                <div className="flex items-center gap-1">
+                  Joined
+                  <ArrowUpDown size={14} className="text-muted-foreground" />
+                </div>
               </TableHead>
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
-              >
-                Address
-              </TableHead>
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
-              >
-                Phone
-              </TableHead>
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
-              >
-                Date joined
-              </TableHead>
-              <TableHead
-                className="w-[150px] cursor-pointer"
-                onClick={() => toggleSort("order_name")}
-              >
-                Details
-              </TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((company, index) => {
-              return (
-                <TableRow key={index} className="hover:bg-zinc-50">
-                  <TableCell>{company.company_name}</TableCell>
-                  <TableCell>{company.contact_email}</TableCell>
-                  <TableCell>{company.address}</TableCell>
-                  <TableCell>{company.company_phone}</TableCell>
-                  <TableCell>{company.date_joined}</TableCell>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredData.length > 0 ? (
+              filteredData.map((company) => (
+                <TableRow 
+                  key={company.id} 
+                  className="hover:bg-muted/50 cursor-pointer"
+                  onClick={() => onRowClick ? onRowClick(company) : null}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-sm font-medium">
+                          {company.company_name?.charAt(0)?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div>{company.company_name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {company.contact_email}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell>
+                    <div>{company.contact_name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {company.company_phone}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="line-clamp-1">{company.address}</div>
+                  </TableCell>
+                  <TableCell>{formatDate(company.date_joined)}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(company.status)}>
+                      {company.status || "Unknown"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Button
-                      onClick={() => {
-                        //navigate to
-                        navigate(`/companies/companyDetails/${company.id}`, {
-                          state: { company },
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/companies/companyDetails/${company.id}` , {
+                          state : {company}
                         });
                       }}
-                      size="sm"
-                      className="bg-teal-500 hover:bg-teal-600 text-white flex items-center gap-1"
                     >
-                      <Eye size={14} />
+                      <Eye size={16} className="mr-1" />
                       View
                     </Button>
                   </TableCell>
                 </TableRow>
-              );
-            })}
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  {searchTerm || Object.values(filters).some(Boolean) 
+                    ? "No matching companies found" 
+                    : "No companies available"}
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {filteredData.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredData.length} of {data.length} companies
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={true} // Add your pagination logic here
+            >
+              <ChevronLeft size={16} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={true} // Add your pagination logic here
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
