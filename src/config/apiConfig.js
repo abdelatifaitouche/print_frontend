@@ -1,15 +1,14 @@
 const ENV = 'developement' ; 
 
-//prod : https://neuroflow-backend.onrender.com/api/
 
 //dev : "http://127.0.0.1:8000/api/"
 
-
+// prod : https://print-backend-z4p1.onrender.com/api/v1/
 let BASE_API_URL = ""
 
 const config = {
     developement : {
-        API_URL : "https://print-backend-z4p1.onrender.com/api/v1/"
+        API_URL : "http://127.0.0.1:8000/api/v1/"
     },
 }
 

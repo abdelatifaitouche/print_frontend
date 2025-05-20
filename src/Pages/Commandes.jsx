@@ -161,10 +161,10 @@ function Commandes() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredOrders.length > 0 ? (
-                      filteredOrders.map((order) => (
+                    {orders.length > 0 ? (
+                      orders.map((order) => (
                         <TableRow key={order.id} className="hover:bg-muted/50">
-                          <TableCell className="font-medium">#{order.id}</TableCell>
+                          <TableCell className="font-medium">#{order.order_name}</TableCell>
                           <TableCell>{order.company.company_name}</TableCell>
                           <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>${order.amount}</TableCell>
