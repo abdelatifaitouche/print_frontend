@@ -20,3 +20,6 @@ export const createUser = (user_data) => {
 };
 
 
+export const getUserDetails = (id) => AXIOS_CONFIG.get(`users/userDetails/${id}`);
+export const updateUser = (id, data) => AXIOS_CONFIG.put(`users/userDetails/${id}/`, data);
+
