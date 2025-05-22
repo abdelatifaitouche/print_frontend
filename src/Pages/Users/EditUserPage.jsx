@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUserDetails, updateUser, AdminchangeUserPassword } from '@/Services/UsersService';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Button } from '@/Components/ui/button';
 import { Mail, Phone, User, Shield, Ban, Lock } from 'lucide-react';
 
 export default function EditUserPage() {
