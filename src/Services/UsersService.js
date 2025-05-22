@@ -21,5 +21,16 @@ export const createUser = (user_data) => {
 
 
 export const getUserDetails = (id) => AXIOS_CONFIG.get(`users/userDetails/${id}`);
-export const updateUser = (id, data) => AXIOS_CONFIG.put(`users/userDetails/${id}/`, data);
+export const updateUser = (id, data) => AXIOS_CONFIG.patch(`users/userDetails/${id}`, data);
+export const blockUser = (id) =>
+  AXIOS_CONFIG.post(`/users/blockuser/${id}`);
+
+export const unblockUser = (id) =>
+  AXIOS_CONFIG.post(`/users/unblockUser/${id}`);
+
+export const deleteUser = (id) =>
+  AXIOS_CONFIG.delete(`/users/userDetails/${id}`);
+
+export const AdminchangeUserPassword = (id, data) =>
+  AXIOS_CONFIG.post(`/users/change-password/${id}/`, data);
 

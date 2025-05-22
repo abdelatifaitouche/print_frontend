@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getUserDetails } from '@/Services/UsersService';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/Components/ui/card';
 import { Skeleton } from '@/Components/ui/skeleton';
 import { Button } from "@/Components/ui/button";
+import { getUserDetails, blockUser, unblockUser, deleteUser } from '@/Services/UsersService';
 
 import { 
   ArrowLeft, 
@@ -26,6 +26,7 @@ function UserDetailPage() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [companyData, setCompanyData] = useState(null);
+  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +40,37 @@ function UserDetailPage() {
   }, [id]);
 
 
+  const handleDelete = async () => {
+  const confirmed = window.confirm("Are you sure you want to delete this user?");
+  if (!confirmed) return;
+
+  try {
+    await deleteUser(id);
+    navigate('/users'); // Redirect to user list after delete
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+  }
+};
+
+
+
+    const handleToggleBlock = async () => {
+    if (!user) return;
+    setIsToggling(true);
+    try {
+        if (user.is_active) {
+        await blockUser(user.id);
+        } else {
+        await unblockUser(user.id);
+        }
+        const updated = await getUserDetails(id);
+        setUser(updated.data.response);
+    } catch (err) {
+        console.error('Error toggling user status:', err);
+    } finally {
+        setIsToggling(false);
+    }
+    };
     const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -64,25 +96,46 @@ function UserDetailPage() {
           Back to Users
         </Button>
         <div className="flex gap-2">
-          <Button
+        <Button
             variant="destructive"
             size="sm"
             className="gap-2"
-            onClick={() => console.log('Delete user')}
-          >
+            onClick={handleDelete}
+        >
             <Trash2 size={16} />
             Delete
-          </Button>
-          <Button
+        </Button>
+        <Button
             variant="default"
             size="sm"
             className="gap-2"
             onClick={() => navigate(`/users/edit/${id}`)}
-          >
+        >
             <Edit2 size={16} />
             Edit
-          </Button>
+        </Button>
+
+        <Button
+            variant={user?.is_active ? "destructive" : "secondary"}
+            size="sm"
+            className="gap-2"
+            onClick={handleToggleBlock}
+            disabled={isToggling}
+        >
+            {user?.is_active ? (
+            <>
+                <ShieldUser size={16} />
+                Block
+            </>
+            ) : (
+            <>
+                <ShieldUser size={16} />
+                Unblock
+            </>
+            )}
+        </Button>
         </div>
+
       </div>
 
       {/* Main Content */}
