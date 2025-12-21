@@ -5,7 +5,7 @@ import AXIOS_CONFIG from "@/config/axiosConfig";
 
 const getOrders = async () =>{
     try{
-        const response = await AXIOS_CONFIG.get('orders/ordersList/');
+        const response = await AXIOS_CONFIG.get('orders');
         return response.data
     }catch(errors){
 

@@ -21,7 +21,7 @@ function CompaniesPage() {
     setIsRefreshing(true);
     try {
       const data = await getCompanies();
-      setCompanies(data.response || []);
+      setCompanies(data || []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     } finally {

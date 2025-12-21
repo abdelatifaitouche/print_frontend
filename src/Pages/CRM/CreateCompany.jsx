@@ -1,39 +1,35 @@
 import React, { useState } from "react";
-import { Check } from "lucide-react";
-import { Input } from "@/Components/ui/input";
-import { Button } from "@/Components/ui/button";
+import { Check, Building2, Mail, Phone, MapPin } from "lucide-react";
 import { createCompany } from "@/Services/CompanyService";
-import { toast } from "sonner";
+
 
 function CreateCompany() {
   const [formData, setFormData] = useState({
-    company_name: "",
-    contact_email: "",
-    company_phone: "",
+    name: "",
+    email: "",
+    phone: "",
     address: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  
-
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.company_name.trim()) {
-      newErrors.company_name = "Company name is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Company name is required";
     }
 
-    if (!formData.contact_email.trim()) {
-      newErrors.contact_email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.contact_email)) {
-      newErrors.contact_email = "Email is invalid";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email is invalid";
     }
 
-    if (!formData.company_phone.trim()) {
-      newErrors.company_phone = "Phone number is required";
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
     }
 
     if (!formData.address.trim()) {
@@ -58,145 +54,228 @@ function CreateCompany() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    const validationErrors = validateForm();
     
-    setIsSubmitting(true)
-    
-    try {
-        const response = await createCompany(formData);
-        toast.success('Company Created successfuly')
-        setIsSubmitting(false)
-
-    }catch(error){
-        console.log(error)
-        setIsSubmitting(false)
-
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
 
-
+    setIsSubmitting(true);
+    setErrors({});
     
+    try {
+      // Actual API call
+      const response = await createCompany(formData);
+      console.log("Company created:", response);
+      
+      setIsSuccess(true);
+      
+      // Reset form after success
+      setTimeout(() => {
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+        });
+        setIsSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error("Error creating company:", error);
+      setErrors({ submit: "Failed to create company. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-1 text-left">
-        <h1 className="text-3xl font-bold text-gray-900">Add a new company</h1>
-        <p className="mt-2 text-gray-600">
-          Enter company details
-        </p>
-      </div>
-      <div className="min-h-screen flex flex-col justify-start items-center p-4">
-        <div className="w-full max-w-lg bg-white rounded-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-2xl mb-4 shadow-lg">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Add New Company
+            </h1>
+            <p className="text-lg text-gray-600">
+              Fill in the details below to register a new company
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 md:p-10">
+            <div className="space-y-6">
+              {/* Company Name */}
               <div>
                 <label
-                  htmlFor="company_name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="name"
+                  className="flex items-center text-sm font-semibold text-gray-900 mb-2"
                 >
+                  <Building2 className="w-4 h-4 mr-2 text-gray-700" />
                   Company Name
                 </label>
-                <Input
+                <input
                   type="text"
-                  name="company_name"
-                  id="company_name"
-                  placeholder="Company name"
-                  value={formData.company_name}
+                  name="name"
+                  id="name"
+                  placeholder="Enter company name"
+                  value={formData.name}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 border ${
-                    errors.company_name ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                  className={`w-full px-4 py-3 border ${
+                    errors.name ? "border-red-400 bg-red-50" : "border-gray-300"
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white`}
                 />
-                {errors.company_name && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.company_name}
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center">
+                    <span className="inline-block w-1 h-1 bg-red-600 rounded-full mr-2"></span>
+                    {errors.name}
                   </p>
                 )}
               </div>
 
+              {/* Email and Phone Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Email */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="flex items-center text-sm font-semibold text-gray-900 mb-2"
+                  >
+                    <Mail className="w-4 h-4 mr-2 text-gray-700" />
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    placeholder="company@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border ${
+                      errors.email ? "border-red-400 bg-red-50" : "border-gray-300"
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white`}
+                  />
+                  {errors.email && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">
+                      <span className="inline-block w-1 h-1 bg-red-600 rounded-full mr-2"></span>
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="flex items-center text-sm font-semibold text-gray-900 mb-2"
+                  >
+                    <Phone className="w-4 h-4 mr-2 text-gray-700" />
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    id="phone"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border ${
+                      errors.phone ? "border-red-400 bg-red-50" : "border-gray-300"
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white`}
+                  />
+                  {errors.phone && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">
+                      <span className="inline-block w-1 h-1 bg-red-600 rounded-full mr-2"></span>
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Address */}
               <div>
                 <label
-                  htmlFor="contact_email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="address"
+                  className="flex items-center text-sm font-semibold text-gray-900 mb-2"
                 >
-                  Email
+                  <MapPin className="w-4 h-4 mr-2 text-gray-700" />
+                  Business Address
                 </label>
-                <Input
-                  type="email"
-                  name="contact_email"
-                  id="contact_email"
-                  placeholder="Email address"
-                  value={formData.contact_email}
+                <textarea
+                  name="address"
+                  id="address"
+                  rows="3"
+                  placeholder="Enter complete business address"
+                  value={formData.address}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 border ${
-                    errors.contact_email ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                  className={`w-full px-4 py-3 border ${
+                    errors.address ? "border-red-400 bg-red-50" : "border-gray-300"
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none bg-white`}
                 />
-                {errors.contact_email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.contact_email}
+                {errors.address && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center">
+                    <span className="inline-block w-1 h-1 bg-red-600 rounded-full mr-2"></span>
+                    {errors.address}
                   </p>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label
-                htmlFor="company_phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Phone
-              </label>
-              <Input
-                type="tel"
-                name="company_phone"
-                id="company_phone"
-                placeholder="Phone number"
-                value={formData.company_phone}
-                onChange={handleChange}
-                className={`block w-full px-4 py-3 border ${
-                  errors.company_phone ? "border-red-300" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-              />
-              {errors.company_phone && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.company_phone}
-                </p>
+              {/* Submit Error */}
+              {errors.submit && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {errors.submit}
+                </div>
               )}
-            </div>
 
-            <div>
-              <label
-                htmlFor="address"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Location
-              </label>
-              <Input placeholder="address" name="address" id="address" value={formData.address} onChange={handleChange} />
-            </div>
-
-            <div>
-              <Button
-                type="submit"
+              {/* Submit Button */}
+              <button
+                type="button"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
-                className={`w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
+                className={`w-full py-4 px-6 rounded-lg text-base font-semibold text-white shadow-lg transition-all transform ${
                   isSubmitting
-                    ? "opacity-70 cursor-not-allowed"
-                    : "hover:bg-indigo-700"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-black hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900`}
               >
-                {isSubmitting ? "Creating..." : "Create Company"}
-              </Button>
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Company...
+                  </span>
+                ) : (
+                  "Create Company"
+                )}
+              </button>
             </div>
-          </form>
 
-          {isSuccess && (
-            <div className="mt-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded flex items-center">
-              <Check size={20} className="mr-2" />
-              <span>Company created successfully!</span>
-            </div>
-          )}
+            {/* Success Message */}
+            {isSuccess && (
+              <div className="mt-6 bg-gray-100 border-2 border-gray-800 text-gray-900 px-5 py-4 rounded-lg flex items-center shadow-md">
+                <div className="flex-shrink-0 w-10 h-10 bg-black rounded-full flex items-center justify-center mr-4">
+                  <Check size={24} className="text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold">Success!</p>
+                  <p className="text-sm text-gray-700">Company has been created successfully.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Note */}
+          <p className="text-center text-sm text-gray-500 mt-6">
+            All fields are required to complete the registration
+          </p>
         </div>
       </div>
     </div>

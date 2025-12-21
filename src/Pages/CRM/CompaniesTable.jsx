@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -9,29 +9,16 @@ import {
   ArrowUpDown,
   X
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/Components/ui/table";
-import { Input } from "@/Components/ui/input";
-import { Button } from "@/Components/ui/button";
-import { Badge } from "@/Components/ui/badge";
-import { Skeleton } from "@/Components/ui/skeleton";
 
 const CompaniesTable = ({ data = [], onRowClick, isLoading = false }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
-    key: "date_joined",
+    key: "created_at",
     direction: "desc",
   });
   const [filters, setFilters] = useState({
     status: "",
-    industry: "",
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -67,17 +54,15 @@ const CompaniesTable = ({ data = [], onRowClick, isLoading = false }) => {
   const filteredData = useMemo(() => {
     return sortedData.filter((company) => {
       const matchesSearch = 
-        company.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.address?.toLowerCase().includes(searchTerm.toLowerCase());
+        company.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = 
-        !filters.status || company.status?.toLowerCase() === filters.status.toLowerCase();
+        !filters.status || company.folder_status?.toLowerCase() === filters.status.toLowerCase();
 
-      const matchesIndustry = 
-        !filters.industry || company.industry?.toLowerCase() === filters.industry.toLowerCase();
-
-      return matchesSearch && matchesStatus && matchesIndustry;
+      return matchesSearch && matchesStatus;
     });
   }, [sortedData, searchTerm, filters]);
 
@@ -91,222 +76,224 @@ const CompaniesTable = ({ data = [], onRowClick, isLoading = false }) => {
   };
 
   // Get status badge variant
-  const getStatusVariant = (status) => {
-    switch (status?.toLowerCase()) {
-      case "active": return "default";
-      case "pending": return "secondary";
-      case "inactive": return "destructive";
-      default: return "outline";
+  const getStatusVariant = (folder_status) => {
+    switch (folder_status?.toLowerCase()) {
+      case "created": return "bg-gray-100 text-gray-800 border-gray-300";
+      case "pending": return "bg-gray-200 text-gray-900 border-gray-400";
+      case "failed": return "bg-red-50 text-red-700 border-red-300";
+      default: return "bg-white text-gray-600 border-gray-300";
     }
   };
 
   // Clear filters
   const clearFilters = () => {
-    setFilters({ status: "", industry: "" });
+    setFilters({ status: "" });
     setSearchTerm("");
   };
 
+  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-6">
       {/* Search and Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
             placeholder="Search companies..."
-            className="pl-9"
+            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button
-            variant={isFilterOpen ? "default" : "outline"}
-            size="sm"
-            className="gap-2"
+          <button
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              isFilterOpen 
+                ? "bg-black text-white" 
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+            }`}
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
             <Filter size={16} />
             Filters
-            {Object.values(filters).some(Boolean) && (
-              <Badge variant="secondary" className="px-1.5">
-                {Object.values(filters).filter(Boolean).length}
-              </Badge>
+            {activeFiltersCount > 0 && (
+              <span className="px-2 py-0.5 text-xs bg-gray-200 text-gray-900 rounded-full">
+                {activeFiltersCount}
+              </span>
             )}
-          </Button>
+          </button>
 
-          {Object.values(filters).some(Boolean) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
+          {activeFiltersCount > 0 && (
+            <button
+              className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
               onClick={clearFilters}
             >
-              <X size={16} className="mr-1" />
+              <X size={16} />
               Clear
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
       {/* Advanced Filters */}
       {isFilterOpen && (
-        <div className="p-4 bg-muted/50 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-            <select
-              className="w-full p-2 border rounded-md bg-background text-sm"
-              value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Industry</label>
-            <Input
-              placeholder="Filter by industry"
-              value={filters.industry}
-              onChange={(e) => setFilters({...filters, industry: e.target.value})}
-            />
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-900">Status</label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+              >
+                <option value="">All Statuses</option>
+                <option value="created">Created</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/75"
-                onClick={() => requestSort("company_name")}
-              >
-                <div className="flex items-center gap-1">
-                  Company
-                  <ArrowUpDown size={14} className="text-muted-foreground" />
-                </div>
-              </TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/75"
-                onClick={() => requestSort("date_joined")}
-              >
-                <div className="flex items-center gap-1">
-                  Joined
-                  <ArrowUpDown size={14} className="text-muted-foreground" />
-                </div>
-              </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : filteredData.length > 0 ? (
-              filteredData.map((company) => (
-                <TableRow 
-                  key={company.id} 
-                  className="hover:bg-muted/50 cursor-pointer"
-                  onClick={() => onRowClick ? onRowClick(company) : null}
+      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("name")}
                 >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-sm font-medium">
-                          {company.company_name?.charAt(0)?.toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div>{company.company_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {company.contact_email}
+                  <div className="flex items-center gap-1">
+                    Company
+                    <ArrowUpDown size={14} className="text-gray-400" />
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  Contact
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  Location
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => requestSort("created_at")}
+                >
+                  <div className="flex items-center gap-1">
+                    Joined
+                    <ArrowUpDown size={14} className="text-gray-400" />
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div></td>
+                    <td className="px-6 py-4 text-right"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 ml-auto"></div></td>
+                  </tr>
+                ))
+              ) : filteredData.length > 0 ? (
+                filteredData.map((company) => (
+                  <tr 
+                    key={company.id} 
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => onRowClick ? onRowClick(company) : null}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-gray-700">
+                            {company.name?.charAt(0)?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">{company.name}</div>
+                          <div className="text-sm text-gray-500">{company.email}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{company.contact_name || "—"}</div>
+                      <div className="text-sm text-gray-500">{company.phone}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">{company.address}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(company.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusVariant(company.folder_status)}`}>
+                        {company.folder_status || "Unknown"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <button
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/companies/companyDetails/${company.id}`, {
+                            state: { company }
+                          });
+                        }}
+                      >
+                        <Eye size={16} />
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="text-gray-500">
+                      {searchTerm || activeFiltersCount > 0
+                        ? "No matching companies found" 
+                        : "No companies available"}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>{company.contact_name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {company.company_phone}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="line-clamp-1">{company.address}</div>
-                  </TableCell>
-                  <TableCell>{formatDate(company.date_joined)}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(company.status)}>
-                      {company.status || "Unknown"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/companies/companyDetails/${company.id}` , {
-                          state : {company}
-                        });
-                      }}
-                    >
-                      <Eye size={16} className="mr-1" />
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  {searchTerm || Object.values(filters).some(Boolean) 
-                    ? "No matching companies found" 
-                    : "No companies available"}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
       {filteredData.length > 0 && (
         <div className="flex items-center justify-between px-2">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-gray-600">
             Showing {filteredData.length} of {data.length} companies
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={true} // Add your pagination logic here
+            <button
+              className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              disabled={true}
             >
               <ChevronLeft size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={true} // Add your pagination logic here
+            </button>
+            <button
+              className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              disabled={true}
             >
               <ChevronRight size={16} />
-            </Button>
+            </button>
           </div>
         </div>
       )}
