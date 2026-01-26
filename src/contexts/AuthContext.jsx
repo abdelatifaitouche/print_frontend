@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   const login = async (e) => {
     e.preventDefault();
@@ -22,10 +22,10 @@ export const AuthProvider = ({ children }) => {
       password: e.target.password.value,
     })
       .then((response) => {
+        console.log(response)
         setIsLoading(false);
         setIsAuthenticated(true);
         navigate("/");
-        console.log(response);
       })
       .catch((error) => {
         console.log(error);
@@ -44,23 +44,25 @@ export const AuthProvider = ({ children }) => {
 
   let verifyToken = async () => {
     try {
-      const response = await AXIOS_CONFIG.post("auth/verify/");
+      const response = await AXIOS_CONFIG.get("auth/me");
       if (response.status === 200) {
+        console.log(response.data)
+        setProfile(response.data);
         setIsAuthenticated(true);
       } else {
-        setIsAuthenticated(true);
+        setProfile(null)
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      setIsAuthenticated(true);
+      setIsAuthenticated(false);
       console.error("Token verification failed:", error);
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated !== false) {
       verifyToken();
-    }
   }, []);
+  
 
   let logout = async () => {
     //send a request to api/auth/logout
@@ -74,25 +76,16 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  useEffect(() => {
-    const fetchRole = async () => {
-      try {
-        const response = await AXIOS_CONFIG.get("auth/role/");
-        setRole(response.data.user_role);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchRole();
-  }, []);
+    
+  
 
   let contextData = {
     login: login,
     isLoading: isLoading,
     isAuthenticated: isAuthenticated,
     logout: logout,
-    role : role
+    verifyToken : verifyToken,
+    profile : profile
   };
 
   return (

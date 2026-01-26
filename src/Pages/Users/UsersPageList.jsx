@@ -33,7 +33,7 @@ function UsersPageList() {
     try {
       setIsRefreshing(true);
       const response = await getUsers();
-      setUsers(response.users);
+      setUsers(response);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -60,7 +60,7 @@ function UsersPageList() {
         return "success";
       case "client":
         return "secondary";
-      case "operator":
+      case "user":
         return "outline";
       default:
         return "default";
@@ -118,7 +118,6 @@ function UsersPageList() {
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-[200px]">User</TableHead>
-                  <TableHead>Company</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -166,9 +165,7 @@ function UsersPageList() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {user.company?.company_name || "N/A"}
-                      </TableCell>
+                      
                       <TableCell>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
                           {user.role}

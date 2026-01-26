@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
-import getCompanies from "@/Services/CompanyService";
+import {getCompanies} from "@/Services/CompanyService";
 import {
   AlertCircle,
   Building2,
@@ -32,13 +32,11 @@ function CreateUserPage() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    phone_number: "",
     role: "",
-    company: 0,
     password: "",
     password2: "",
   });
-
+/*
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
@@ -54,7 +52,7 @@ function CreateUserPage() {
   useEffect(() => {
     fetchCompanies();
   }, []);
-
+*/
   const validateForm = () => {
     const newErrors = {};
     
@@ -65,18 +63,12 @@ function CreateUserPage() {
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    
-    if (!formData.phone_number || formData.phone_number.length < 8) {
-      newErrors.phone = "Please enter a valid phone number";
-    }
-    
+  
     if (!formData.role) {
       newErrors.role = "Please select a role";
     }
     
-    if (!formData.company || formData.company === 0) {
-      newErrors.company = "Please select a company";
-    }
+ 
     
     if (!formData.password || formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
@@ -161,8 +153,8 @@ function CreateUserPage() {
   };
 
   const roleOptions = [
-    { value: "admin", label: "Admin", description: "Full access to system settings" },
-    { value: "operator", label: "Operator", description: "Can manage daily operations" },
+    { value: "ADMIN", label: "Admin", description: "Full access to system settings" },
+    { value: "USER", label: "Operator", description: "Can manage daily operations" },
     { value: "client", label: "Client", description: "Limited access to own resources" },
   ];
 
@@ -249,30 +241,6 @@ function CreateUserPage() {
                   )}
                 </div>
 
-                {/* Phone Field */}
-                <div className="space-y-2 mt-4">
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone Number
-                  </label>
-                  <div className={`flex items-center border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 bg-white focus-within:ring-2 ${errors.phone ? 'focus-within:ring-red-500' : 'focus-within:ring-blue-500'}`}>
-                    <Phone className={`${errors.phone ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                    <input
-                      id="phone"
-                      name="phone_number"
-                      type="text"
-                      value={formData.phone_number}
-                      onChange={handleChange}
-                      placeholder="+213xxxxxxxxxx"
-                      className="w-full bg-transparent outline-none border-none focus:ring-0 text-sm placeholder-gray-400"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.phone}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
               
@@ -318,43 +286,6 @@ function CreateUserPage() {
                 </div>
 
                 {/* Company Select Field */}
-                <div className="space-y-2 mt-4">
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700">
-                    Company
-                  </label>
-                  <div className={`${errors.company ? 'ring-2 ring-red-500' : ''}`}>
-                    <Select
-                      value={formData.company === 0 ? undefined : String(formData.company)}
-                      onValueChange={(value) => handleSelectChange("company", Number(value))}
-                    >
-                      <SelectTrigger className={`w-full border ${errors.company ? 'border-red-500' : 'border-gray-300'} focus:ring-0`}>
-                        <div className="flex items-center">
-                          <Building2 className={`${errors.company ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                          <SelectValue placeholder="Select a company" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.length > 0 ? (
-                          companies.map((company) => (
-                            <SelectItem key={company.id} value={String(company.id)}>
-                              {company.company_name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 text-center text-sm text-gray-500">
-                            No companies available
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {errors.company && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.company}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
             

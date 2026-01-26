@@ -16,6 +16,14 @@ import CompanyDetailPage from "./Pages/CRM/CompanyDetailPage";
 import CreateUserPage from "./Pages/Users/CreateUserPage";
 import EditUserPage from "./Pages/Users/EditUserPage";
 import UserDetailPage from "./Pages/Users/UserDetailPage";
+import DriveListPage from "./Pages/Drive/DriveListPage";
+import DriveFolderDetailPage from "./Pages/Drive/DriveFolderDetail";
+import ProductsPage from "./Pages/Products/productPage";
+import RawMaterialsPage from "./Pages/Stock/stockPage";
+import RawMaterialDetailPage from "./Pages/Stock/rawMaterialDetailPage";
+import RawMaterialCreatePage from "./Pages/Stock/rawMaterialCreatePage";
+import ProductDetailPage from "./Pages/Products/productDetailPage";
+import ProductCreatePage from "./Pages/Products/productCreatePage";
 
 function App() {
   return (
@@ -117,6 +125,71 @@ function App() {
             element={
               <PrivateRoute>
                 <EditUserPage />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/drive"
+            element={
+              <PrivateRoute>
+                <DriveListPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/drive/:folderId"
+            element={
+              <PrivateRoute>
+                <DriveFolderDetailPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/products"
+            element={
+              <PrivateRoute>
+                <ProductsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/products/:id"
+            element={
+              <PrivateRoute>
+                <ProductDetailPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/products/new"
+            element={
+              <PrivateRoute>
+                <ProductCreatePage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/stock"
+            element={
+              <PrivateRoute>
+                <RawMaterialsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/stock/:id"
+            element={
+              <PrivateRoute>
+                <RawMaterialDetailPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/stock/create"
+            element={
+              <PrivateRoute>
+                <RawMaterialCreatePage />
               </PrivateRoute>
             }
           />

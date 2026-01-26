@@ -5,7 +5,7 @@ import AXIOS_CONFIG from "@/config/axiosConfig";
 
 const getOrders = async () =>{
     try{
-        const response = await AXIOS_CONFIG.get('orders');
+        const response = await AXIOS_CONFIG.get('orders/');
         return response.data
     }catch(errors){
 
@@ -20,9 +20,9 @@ export default getOrders
 
 export const getOrderDetails = async (order_id) =>{
     try{
-        const response = await AXIOS_CONFIG.get(`orders/orderDetails/${order_id}`);
-        console.log(response.data.order)
-        return response.data.order
+        const response = await AXIOS_CONFIG.get(`orders/${order_id}`);
+        console.log(response.data)
+        return response.data
     }catch(error){
         console.log(error)
     }
@@ -32,7 +32,7 @@ export const getOrderDetails = async (order_id) =>{
 
 export const deleteOrder = async (order_id) =>{
     try{
-        const response = await AXIOS_CONFIG.delete(`orders/orderDetails/${order_id}`);
+        const response = await AXIOS_CONFIG.delete(`orders/${order_id}/`);
         return response.data
     }catch(error){
         console.log(error)

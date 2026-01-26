@@ -1,17 +1,10 @@
 import { 
-  Calendar, 
-  Home, 
-  Inbox, 
-  Settings, 
-  Users, 
-  ChevronDown,
-  LogOut,
-  PlusCircle,
-  Folder,
-  HelpCircle
+  Calendar, Home, Inbox, Settings, Users, LogOut,
+  PlusCircle, Folder, HelpCircle, ChevronDown
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useContext } from "react";
+import AuthContext from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -22,190 +15,118 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
+  SidebarMenuItem
 } from "@/Components/ui/sidebar";
-import { Collapsible, CollapsibleContent } from "@/Components/ui/collapsible";
 import { Separator } from "@/Components/ui/separator";
 import { Button } from "@/Components/ui/button";
 import ProfileHeader from "./ProfileHeader";
-import AuthContext from "@/contexts/AuthContext";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/Components/ui/collapsible";
 
 const mainItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Orders",
-    url: "/commandes",
-    icon: Inbox,
-    badge: "12",
-  },
-  {
-    title: "Clients",
-    url: "/companies",
-    icon: Users,
-  },
-  {
-    title: "Calendar",
-    url: "/calendar",
-    icon: Calendar,
-  },
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Orders", url: "/commandes", icon: Inbox, badge: "12" },
+  { title: "Clients", url: "/companies", icon: Users },
+];
+
+const stockItems = [
+  { title: "Products", url: "/products", icon: Folder },
+  { title: "Stock", url: "/stock", icon: Folder },
 ];
 
 const adminItems = [
-  {
-    title: "Users",
-    url: "/users",
-    icon: Users,
-  },
-  {
-    title: "Documents",
-    url: "/documents",
-    icon: Folder,
-  }
+  { title: "Users", url: "/users", icon: Users },
+  { title: "Documents", url: "/drive", icon: Folder },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
-  const { logout } = useContext(AuthContext);
+  const {profile ,  logout } = useContext(AuthContext);
   const location = useLocation();
 
+  const renderMenuItem = (item) => (
+    <SidebarMenuItem key={item.title}>
+      <SidebarMenuButton
+        asChild
+        active={location.pathname === item.url}
+        className="group transition-colors rounded-lg"
+      >
+        <Link
+          to={item.url}
+          className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded hover:bg-gray-200 hover:text-gray-900 w-full"
+        >
+          <item.icon className="h-5 w-5 text-gray-500 group-hover:text-gray-900 transition-all" />
+          <span className="flex-1 truncate">{item.title}</span>
+          {item.badge && (
+            <span className="ml-auto rounded-full bg-black text-white px-2 py-0.5 text-xs font-semibold">
+              {item.badge}
+            </span>
+          )}
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+
+  const renderCollapsibleGroup = (title, items) => (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <div className="px-4 py-2 flex justify-between items-center cursor-pointer text-xs font-semibold uppercase text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded">
+          <span>{title}</span>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarGroupContent className="px-2">
+          <SidebarMenu>{items.map(renderMenuItem)}</SidebarMenu>
+        </SidebarGroupContent>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
   return (
-    <Sidebar className="border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
-      <SidebarContent className="space-y-4">
-        {/* Header */}
+    <Sidebar className="border-r bg-white min-h-screen flex flex-col justify-between w-60">
+      <SidebarContent className="space-y-6 overflow-hidden">
         <SidebarHeader className="px-4 py-6">
           <ProfileHeader />
         </SidebarHeader>
 
-        {/* Quick Action Button */}
+        {/* Quick Action */}
         <div className="px-4">
-          <Button className="w-full gap-2" size="sm">
-            <PlusCircle size={16} />
-            <span>New Order</span>
+          <Button className="w-full gap-2 flex items-center justify-center" size="sm">
+            <PlusCircle size={16} /> New Order
           </Button>
         </div>
 
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-muted-foreground">
+          <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-gray-400">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    active={location.pathname === item.url}
-                    className="hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <Link to={item.url} className="group">
-                      <item.icon className="h-4 w-4 transition-all group-hover:scale-110" />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarMenu>{mainItems.map(renderMenuItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="mx-4 w-auto" />
+        <Separator className="mx-4" />
+
+        {/* Stock Section */}
+        {profile?.role == "USER" ? "" : renderCollapsibleGroup("Stock Management", stockItems)}
+
+        <Separator className="mx-4" />
 
         {/* Admin Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-muted-foreground">
-            Administration
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    active={location.pathname === item.url}
-                    className="hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <Link to={item.url} className="group">
-                      <item.icon className="h-4 w-4 transition-all group-hover:scale-110" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-
-              {/* Collapsible Settings Section */}
-              <Collapsible defaultOpen>
-                <SidebarMenuItem>
-                  <SidebarMenuButton className="hover:bg-accent hover:text-accent-foreground">
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                    <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <CollapsibleContent className="pl-4">
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem asChild>
-                      <Link 
-                        to="/settings/general" 
-                        className="hover:text-primary"
-                      >
-                        General
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem asChild>
-                      <Link 
-                        to="/settings/security" 
-                        className="hover:text-primary"
-                      >
-                        Security
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem asChild>
-                      <Link 
-                        to="/settings/notifications" 
-                        className="hover:text-primary"
-                      >
-                        Notifications
-                      </Link>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {profile?.role == "USER" ? "" : renderCollapsibleGroup("Administration", adminItems)}
       </SidebarContent>
 
       {/* Footer */}
       <SidebarFooter className="p-4">
         <div className="space-y-2">
           <SidebarMenuButton asChild>
-            <Link 
-              to="/help" 
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span>Help Center</span>
+            <Link to="/help" className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 w-full">
+              <HelpCircle className="h-4 w-4" /> Help Center
             </Link>
           </SidebarMenuButton>
-          
-          <SidebarMenuButton 
-            onClick={logout}
-            className="text-sm text-muted-foreground hover:text-destructive"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
+          <SidebarMenuButton onClick={logout} className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 w-full">
+            <LogOut className="h-4 w-4" /> Logout
           </SidebarMenuButton>
         </div>
       </SidebarFooter>

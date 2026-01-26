@@ -6,7 +6,7 @@ import { Input } from '@/Components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/Components/ui/card';
 import { Skeleton } from '@/Components/ui/skeleton';
 import { Badge } from '@/Components/ui/badge';
-import getCompanies from '@/Services/CompanyService';
+import {getCompanies} from '@/Services/CompanyService';
 import CompaniesTable from './CompaniesTable';
 
 function CompaniesPage() {

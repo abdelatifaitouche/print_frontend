@@ -1,80 +1,170 @@
-import axios from "axios";
-import React, { useState } from "react";
-import { PlusCircle, Upload, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { PlusCircle, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import AXIOS_CONFIG from "@/config/axiosConfig";
+import { Button } from "@/Components/ui/button";
+import { Card } from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
 
 function CreateOrderPage() {
-  const [order, setOrder] = useState({ items: []});
+  const [order, setOrder] = useState({ items: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    try {
+      const { data } = await AXIOS_CONFIG.get("/products/", { withCredentials: true });
+      setProducts(data || []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch products");
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const addOrderItem = () => {
     setOrder((prev) => ({
       ...prev,
-      items: [...prev.items, { item_name: "", file: null }],
+      items: [...prev.items, { product_id: "", quantity: 1, file: null, filePreview: null }],
     }));
   };
 
   const updateItemData = (index, field, value) => {
-    const updatedItem = [...order.items];
-    updatedItem[index][field] = value;
-    setOrder((prev) => ({ ...prev, items: updatedItem }));
+    const updatedItems = [...order.items];
+    updatedItems[index][field] = value;
+    setOrder((prev) => ({ ...prev, items: updatedItems }));
+  };
+
+  const handleFileChange = (index, file) => {
+    if (!file) return;
+
+    const maxSize = 1 * 1024 * 1024 * 1024; // 1GB
+    if (file.size > maxSize) {
+      toast.error("File size must be less than 1GB");
+      return;
+    }
+
+    let previewUrl = null;
+    if (file.type.startsWith("image/")) {
+      previewUrl = URL.createObjectURL(file);
+    }
+
+    const updatedItems = [...order.items];
+    updatedItems[index].file = file;
+    updatedItems[index].filePreview = previewUrl;
+    setOrder((prev) => ({ ...prev, items: updatedItems }));
+  };
+
+  const removeFile = (index) => {
+    const updatedItems = [...order.items];
+    
+    if (updatedItems[index].filePreview) {
+      URL.revokeObjectURL(updatedItems[index].filePreview);
+    }
+    
+    updatedItems[index].file = null;
+    updatedItems[index].filePreview = null;
+    setOrder((prev) => ({ ...prev, items: updatedItems }));
   };
 
   const removeOrderItem = (indexToRemove) => {
+    if (order.items[indexToRemove].filePreview) {
+      URL.revokeObjectURL(order.items[indexToRemove].filePreview);
+    }
+
     setOrder((prev) => ({
       ...prev,
-      items: prev.items.filter((_, index) => index !== indexToRemove),
+      items: prev.items.filter((_, i) => i !== indexToRemove),
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    const formData = new FormData();    
-    order.items.forEach((item, index) => {
-      formData.append(`items[${index}][item_name]`, item.item_name);
-      formData.append(`items[${index}][file]`, item.file);
-    });
+  const handleSubmit = async () => {
+    if (order.items.length === 0) {
+      toast.error("Please add at least one item");
+      return;
+    }
 
-    AXIOS_CONFIG
-      .post("orders/ordersList/", formData, {
-        withCredentials : true , 
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((response) => {
-        console.log(response);
-        setIsSubmitting(false);
-        toast('Order created succesfuly')
-      })
-      .catch((errors) => {
-        console.error(errors);
-        setIsSubmitting(false);
-        toast('an error has occured please try later')
+    const hasInvalidItem = order.items.some(
+      (item) => !item.product_id || !item.quantity || !item.file
+    );
+
+    if (hasInvalidItem) {
+      toast.error("Please fill in all fields and upload files for each item");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+
+      const itemsData = order.items.map((item) => ({
+        product_id: item.product_id,
+        quantity: parseInt(item.quantity),
+      }));
+
+      formData.append("items_data", JSON.stringify(itemsData));
+
+      order.items.forEach((item) => {
+        if (item.file) {
+          formData.append("files", item.file);
+        }
       });
+
+      await AXIOS_CONFIG.post("/orders/", formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Order created successfully!");
+      
+      order.items.forEach((item) => {
+        if (item.filePreview) {
+          URL.revokeObjectURL(item.filePreview);
+        }
+      });
+      
+      setOrder({ items: [] });
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error.response?.data?.detail || "An error occurred. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      order.items.forEach((item) => {
+        if (item.filePreview) {
+          URL.revokeObjectURL(item.filePreview);
+        }
+      });
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 p-6 sm:p-10">
-      <div className="max-w-5xl mx-auto">
-        {/* Page Title */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-zinc-800 mb-2">Create Order</h1>
-          <p className="text-zinc-500">Add items to your order and upload relevant files</p>
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-zinc-800 mb-1">Create Order</h1>
+          <p className="text-zinc-500">Add products, set quantities, and upload files</p>
         </div>
 
-        {/* Add Item Button */}
-        <button
-          type="button"
-          onClick={addOrderItem}
-          className="mb-8 px-5 py-2.5 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all flex items-center gap-2 font-medium"
-        >
+        <Button onClick={addOrderItem} className="mb-6 gap-2 flex items-center" variant="default">
           <PlusCircle size={18} />
-          <span>Add Item</span>
-        </button>
+          Add Item
+        </Button>
 
-        {/* Empty State */}
         {order.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border border-zinc-200">
             <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
@@ -84,143 +174,132 @@ function CreateOrderPage() {
             <p className="text-zinc-500 text-sm mt-1">Click "Add Item" to get started</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} encType="multipart/form-data">
-            <div className="space-y-4">
-              {order.items.map((item, index) => (
-                <OrderItemForm
-                  key={index}
-                  item={item}
-                  index={index}
-                  updateItemData={updateItemData}
-                  removeOrderItem={removeOrderItem}
-                />
-              ))}
-            </div>
-            
-            <div className="mt-8">
-              <button
-                type="submit"
-                disabled={isSubmitting || order.items.length === 0}
-                className="w-full sm:w-auto py-3 px-8 bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  "Submit Order"
-                )}
-              </button>
-            </div>
-          </form>
+          <div className="space-y-4">
+            {order.items.map((item, index) => (
+              <Card key={index} className="p-4 border border-zinc-200 rounded-lg hover:shadow-sm transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-medium text-zinc-600">Item {index + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeOrderItem(index)}
+                    className="text-zinc-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                      Product <span className="text-red-500">*</span>
+                    </label>
+                    {isLoadingProducts ? (
+                      <Input type="text" placeholder="Loading products..." disabled />
+                    ) : (
+                      <select
+                        value={item.product_id}
+                        onChange={(e) => updateItemData(index, "product_id", e.target.value)}
+                        className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none transition-all"
+                      >
+                        <option value="">Select a product</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} - ${p.base_price}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                      Quantity <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) => updateItemData(index, "quantity", parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                    Upload File <span className="text-red-500">*</span>
+                  </label>
+                  
+                  {!item.file ? (
+                    <div className="border-2 border-dashed border-zinc-300 rounded-lg p-6 hover:border-teal-500 transition-colors">
+                      <label className="cursor-pointer flex flex-col items-center">
+                        <Upload size={32} className="text-zinc-400 mb-2" />
+                        <span className="text-sm text-zinc-600 mb-1">
+                          Click to upload or drag and drop
+                        </span>
+                        <span className="text-xs text-zinc-400">
+                          PDF, images, or any file (max 1GB)
+                        </span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileChange(index, file);
+                          }}
+                          accept="*/*"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="border border-zinc-300 rounded-lg p-4 bg-zinc-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {item.filePreview ? (
+                            <img
+                              src={item.filePreview}
+                              alt="Preview"
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-zinc-200 rounded flex items-center justify-center">
+                              <Upload size={20} className="text-zinc-500" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-zinc-800 truncate">
+                              {item.file.name}
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              {item.file.size >= 1024 * 1024 
+                                ? `${(item.file.size / (1024 * 1024)).toFixed(2)} MB`
+                                : `${(item.file.size / 1024).toFixed(2)} KB`}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="ml-2 text-zinc-400 hover:text-red-500 transition-colors"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto py-3 px-6 mt-4 flex items-center justify-center gap-2"
+              variant="default"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Order"}
+            </Button>
+          </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function OrderItemForm({ item, index, updateItemData, removeOrderItem }) {
-  const [fileName, setFileName] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      updateItemData(index, "file", file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setFileName(file.name);
-      updateItemData(index, "file", file);
-    }
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-lg border border-zinc-200 hover:border-zinc-300 transition-all">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-zinc-500">Item {index + 1}</span>
-        <button 
-          type="button" 
-          onClick={() => removeOrderItem(index)}
-          className="text-zinc-400 hover:text-red-500 transition-colors"
-          aria-label="Remove item"
-        >
-          <Trash2 size={18} />
-        </button>
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-zinc-700 mb-1.5">Item Name</label>
-        <input
-          type="text"
-          placeholder="Enter item name"
-          value={item.item_name}
-          onChange={(e) => updateItemData(index, "item_name", e.target.value)}
-          className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none transition-all"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-zinc-700 mb-1.5">Upload File</label>
-        <div 
-          className={`relative ${isDragging ? 'border-teal-500 bg-teal-50' : 'border-zinc-300 bg-white'} border rounded-lg transition-all`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <input
-            type="file"
-            id={`file-${index}`}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <label
-            htmlFor={`file-${index}`}
-            className="flex items-center justify-center w-full px-4 py-3 cursor-pointer transition-all text-zinc-500"
-          >
-            {fileName ? (
-              <div className="flex w-full items-center justify-between">
-                <span className="text-zinc-800 truncate">{fileName}</span>
-                <button 
-                  type="button"
-                  className="p-1 hover:bg-zinc-100 rounded-full"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFileName("");
-                    updateItemData(index, "file", null);
-                  }}
-                >
-                  <X size={16} className="text-zinc-500" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <Upload size={18} className="text-teal-500 mr-2" />
-                <span>Choose or drop a file</span>
-              </div>
-            )}
-          </label>
-        </div>
       </div>
     </div>
   );
