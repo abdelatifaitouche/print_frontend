@@ -32,7 +32,7 @@ export const getOrderDetails = async (order_id) =>{
 
 export const deleteOrder = async (order_id) =>{
     try{
-        const response = await AXIOS_CONFIG.delete(`orders/${order_id}/`);
+        const response = await AXIOS_CONFIG.delete(`/orders/${order_id}/`);
         return response.data
     }catch(error){
         console.log(error)
@@ -70,7 +70,7 @@ export const getOrdersStats = async () =>{
 
 export const updateOrderItem = async (order_id , data) => {
     try{
-        const response = await AXIOS_CONFIG.patch(`orders/orderItem/orderItemDetails/${order_id}` , data)
+        const response = await AXIOS_CONFIG.patch(`items/${order_id}` , data)
         console.log(response)
         return response
     }catch(error){

@@ -269,16 +269,22 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
                           <span>Pending</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="in_progress" className="cursor-pointer">
+                      <SelectItem value="processing" className="cursor-pointer">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span>In Progress</span>
+                          <span>Processing</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="printed" className="cursor-pointer">
+                      <SelectItem value="shipped" className="cursor-pointer">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Printed</span>
+                          <span>Shipped</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="delivered" className="cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span>Delivered</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="cancelled" className="cursor-pointer">

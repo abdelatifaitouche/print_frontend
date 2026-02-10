@@ -16,7 +16,9 @@ import {
   AlertDialogAction,
 } from "@/Components/ui/alert-dialog";
 
-function OrderDetailHeader({ order_id }) {
+function OrderDetailHeader({ order_data }) {
+  if (!order_data) return null ; 
+  console.log(order_data.id)
   const navigate = useNavigate();
 
   return (
@@ -29,7 +31,7 @@ function OrderDetailHeader({ order_id }) {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-2xl font-semibold text-gray-800 truncate">
-          Order #{order_id}
+          {order_data.order_number}
         </h1>
       </div>
 
@@ -51,7 +53,7 @@ function OrderDetailHeader({ order_id }) {
                 className="bg-red-500 hover:bg-red-600 text-white"
                 onClick={async () => {
                   try {
-                    await deleteOrder(order_id);
+                    await deleteOrder(order_data.id);
                     toast.success("Order deleted successfully");
                     navigate(-1);
                   } catch (error) {

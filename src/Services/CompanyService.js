@@ -32,7 +32,7 @@ export const createCompany = async (data) => {
 // ────────────────────────────────────────────────
 export const getCompanyDetails = async (company_id) => {
   try {
-    const response = await AXIOS_CONFIG.get(`/company/${company_id}/`);
+    const response = await AXIOS_CONFIG.get(`/company/${company_id}`);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch company ${company_id}:`, error);

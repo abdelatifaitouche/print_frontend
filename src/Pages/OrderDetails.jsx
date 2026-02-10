@@ -88,7 +88,7 @@ function OrderDetails() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header with Refresh Button */}
         <div className="flex items-center justify-between mb-6">
-          <OrderDetailHeader order_id={orderData?.id} />
+          <OrderDetailHeader order_data={orderData} />
           <Button
             variant="outline"
             size="sm"

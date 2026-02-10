@@ -23,7 +23,7 @@ function OrderDetailSummary({ orderDatas }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">
-            Order #{orderDatas.order_number}
+           {orderDatas.order_number}
           </h2>
           <p className="text-gray-500 text-sm mt-1">
             Placed on {new Date(orderDatas.created_at).toLocaleString()}

@@ -172,7 +172,7 @@ function Commandes() {
                         <TableCell className="px-4 py-2 font-medium">{order.order_number}</TableCell>
                         <TableCell className="px-4 py-2">{order.created_by}</TableCell>
                         <TableCell className="px-4 py-2">{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="px-4 py-2">${order.order_price}</TableCell>
+                        <TableCell className="px-4 py-2">{order.order_price} dzd</TableCell>
                         <TableCell className="px-4 py-2">
                           <Badge variant={getStatusVariant(order.status)} className="capitalize">
                             {order.status}
