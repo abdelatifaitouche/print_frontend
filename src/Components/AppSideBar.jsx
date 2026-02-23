@@ -109,12 +109,12 @@ export function AppSidebar() {
         <Separator className="mx-4" />
 
         {/* Stock Section */}
-        {profile?.role == "USER" ? "" : renderCollapsibleGroup("Stock Management", stockItems)}
+        {profile?.role == "USER" || profile?.role == "CLIENT" ? "" : renderCollapsibleGroup("Stock Management", stockItems)}
 
         <Separator className="mx-4" />
 
         {/* Admin Section */}
-        {profile?.role == "USER" ? "" : renderCollapsibleGroup("Administration", adminItems)}
+        {profile?.role == "USER" || profile?.role == "CLIENT"? "" : renderCollapsibleGroup("Administration", adminItems)}
       </SidebarContent>
 
       {/* Footer */}

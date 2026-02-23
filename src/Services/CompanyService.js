@@ -4,13 +4,27 @@ import AXIOS_CONFIG from "@/config/axiosConfig";
 // ────────────────────────────────────────────────
 // Get all companies
 // ────────────────────────────────────────────────
-export const getCompanies = async () => {
+export const getCompanies = async ({ page = 1, status = "", all = false } = {}) => {
   try {
-    const response = await AXIOS_CONFIG.get("/company/");
+    const params = new URLSearchParams();
+    
+    if (all) {
+      // When all=True, backend returns all companies
+      params.append("all", "True");
+    } else {
+      // Regular pagination
+      if (page) params.append("page", page);
+    }
+    
+    if (status) params.append("status", status);
+
+    const response = await AXIOS_CONFIG.get(`/company?${params.toString()}`);
+    
+    // Response structure: [companies_array, { page, total_items }]
     return response.data;
   } catch (error) {
     console.error("Failed to fetch companies:", error);
-    throw error;           // ← let the component show error message / toast
+    throw error;
   }
 };
 

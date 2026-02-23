@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Download, Eye, Settings, Loader, Upload, CheckCircle, XCircle, Clock } from "lucide-react";
+import React, { useState , useEffect } from "react";
+import { Download, Eye, Settings, Loader, Upload, CheckCircle, XCircle, Clock, ArrowRight, ChevronRight } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import StatusBadge from "@/Components/StatusBadge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/Components/ui/sheet";
@@ -7,18 +7,44 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Label } from "@/Components/ui/label";
 import { toast } from "sonner";
 import { updateOrderItem } from "@/Services/OrdersService";
-import AXIOS_CONFIG from "@/config/axiosConfig";
 
 function OrderDetailItemDetails({ item, onUpdateSuccess }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [itemStatus, setItemStatus] = useState(item?.status);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [nextStage, setNextStage] = useState(null);
+  const [isLoadingNextStage, setIsLoadingNextStage] = useState(false);
 
   // Get file upload status and data
   const fileStatus = item?.file?.status || "unknown";
   const fileName = item?.file?.file_name || "No file";
   const googleFileId = item?.file?.google_file_id;
+
+  // Fetch next stage from backend
+  useEffect(() => {
+    const fetchNextStage = async () => {
+      setIsLoadingNextStage(true);
+      try {
+        // TODO: Replace with your actual API endpoint
+        // const response = await fetch(`/api/order-items/${item.id}/next-stage`);
+        // const data = await response.json();
+        // setNextStage(data.next_stage);
+        
+        // For now, you can mock it or leave null until you implement the endpoint
+        // Example response: { next_stage: "ACCEPTED", label: "Accept Item" }
+      } catch (error) {
+        console.error("Failed to fetch next stage:", error);
+      } finally {
+        setIsLoadingNextStage(false);
+      }
+    };
+
+    if (item?.id) {
+      fetchNextStage();
+    }
+  }, [item?.id]);
+
 
   const handleDownload = async () => {
     if (!googleFileId) {
@@ -28,10 +54,7 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
 
     setIsDownloading(true);
     try {
-      // Direct download from Google Drive
-      const downloadUrl = `https://drive.google.com/uc?export=download&id=${googleFileId}`;
-      
-      // Create a temporary link and trigger download
+      const downloadUrl = `https://drive.google.com/uc?id=1VqGUaQRmcT_wHWAf3DyJyoy_qCXPo3HU&export=download`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = fileName;
@@ -39,7 +62,6 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
       toast.success("Download started");
     } catch (err) {
       console.error(err);
@@ -54,7 +76,6 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
       toast.error("No file available to preview");
       return;
     }
-    // Open Google Drive preview in new tab
     window.open(`https://drive.google.com/file/d/${googleFileId}/view`, "_blank");
   };
 
@@ -76,32 +97,50 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
     }
   };
 
-  // Render file status badge with appropriate styling
+  // Handle automatic next stage transition
+  const handleNextStage = async () => {
+    if (!nextStage) return;
+
+    setIsUpdating(true);
+    try {
+      await updateOrderItem(item.id, { status: nextStage.status });
+      toast.success(`Status updated to ${nextStage.status}`);
+      setItemStatus(nextStage.status);
+      onUpdateSuccess?.();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Render file status badge
   const renderFileStatusBadge = (status) => {
     const statusConfig = {
       pending: {
         icon: Clock,
-        color: "bg-yellow-100 text-yellow-700 border-yellow-200",
-        label: "Pending Upload"
+        color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+        label: "Pending"
       },
       uploading: {
         icon: Upload,
-        color: "bg-blue-100 text-blue-700 border-blue-200",
-        label: "Uploading..."
+        color: "bg-blue-50 text-blue-700 border-blue-200",
+        label: "Uploading"
       },
       uploaded: {
         icon: CheckCircle,
-        color: "bg-green-100 text-green-700 border-green-200",
+        color: "bg-green-50 text-green-700 border-green-200",
         label: "Uploaded"
       },
       failed: {
         icon: XCircle,
-        color: "bg-red-100 text-red-700 border-red-200",
-        label: "Upload Failed"
+        color: "bg-red-50 text-red-700 border-red-200",
+        label: "Failed"
       },
       unknown: {
         icon: XCircle,
-        color: "bg-gray-100 text-gray-700 border-gray-200",
+        color: "bg-gray-50 text-gray-700 border-gray-200",
         label: "Unknown"
       }
     };
@@ -110,7 +149,7 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
     const Icon = config.icon;
 
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${config.color}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${config.color}`}>
         <Icon size={12} className={status === "uploading" ? "animate-spin" : ""} />
         {config.label}
       </span>
@@ -118,200 +157,278 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+      {/* Product Info */}
       <td className="px-6 py-4">
-        <div className="flex flex-col">
-          <span className="font-medium text-gray-800">{item.product?.name || item.item_number}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-gray-900">{item.product?.name || item.item_number}</span>
           <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
         </div>
       </td>
-      <td className="px-6 py-4 font-medium">{item.item_price} dzd</td>
+
+      {/* Price */}
+      <td className="px-6 py-4">
+        <span className="font-medium text-gray-900">{item.item_price} DZD</span>
+      </td>
+
+      {/* File Info */}
       <td className="px-6 py-4">
         <div className="flex flex-col gap-2">
-          {/* File Name & Status */}
-          <div className="flex flex-col gap-1">
-            <span className="text-sm text-gray-700 truncate max-w-xs" title={fileName}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700 truncate max-w-[200px]" title={fileName}>
               {fileName}
             </span>
             {renderFileStatusBadge(fileStatus)}
           </div>
 
-          {/* Action Buttons - Show based on file status */}
-          {fileStatus === "uploaded" ? (
+          {/* Action Buttons */}
+          {fileStatus === "uploaded" && (
             <div className="flex gap-2">
               <Button
-                size="xs"
+                size="sm"
                 variant="outline"
                 disabled={isDownloading}
                 onClick={handleDownload}
+                className="text-xs h-8"
               >
                 {isDownloading ? (
-                  <Loader size={12} className="animate-spin mr-1" />
+                  <Loader size={14} className="animate-spin" />
                 ) : (
-                  <Download size={12} className="mr-1" />
+                  <>
+                    <Download size={14} className="mr-1" />
+                    Download
+                  </>
                 )}
-                Download
               </Button>
               <Button
-                size="xs"
+                size="sm"
                 variant="ghost"
                 onClick={handleFilePreview}
+                className="text-xs h-8"
               >
-                <Eye size={12} className="mr-1" /> Preview
+                <Eye size={14} className="mr-1" />
+                Preview
               </Button>
             </div>
-          ) : fileStatus === "uploading" ? (
-            <span className="text-xs text-blue-600 animate-pulse flex items-center gap-1">
+          )}
+
+          {fileStatus === "uploading" && (
+            <span className="text-xs text-blue-600 flex items-center gap-1">
               <Upload size={12} className="animate-spin" />
-              Upload in progress...
+              Uploading...
             </span>
-          ) : fileStatus === "pending" ? (
+          )}
+
+          {fileStatus === "pending" && (
             <span className="text-xs text-yellow-600 flex items-center gap-1">
               <Clock size={12} />
-              Waiting for upload to start...
+              Waiting...
             </span>
-          ) : fileStatus === "failed" ? (
+          )}
+
+          {fileStatus === "failed" && (
             <span className="text-xs text-red-600 flex items-center gap-1">
               <XCircle size={12} />
-              Upload failed. Please retry.
+              Upload failed
             </span>
-          ) : (
-            <span className="text-xs text-gray-400">No file information</span>
           )}
         </div>
       </td>
+
+      {/* Status */}
       <td className="px-6 py-4">
         <StatusBadge status={itemStatus} />
       </td>
-      <td className="px-6 py-4 text-center">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm" variant="default" className="flex items-center gap-1">
-              <Settings size={14} /> Update
+
+      {/* Actions */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-2">
+          {/* Next Stage Button - Shows if backend provides next stage */}
+          {nextStage && (
+            <Button
+              size="sm"
+              onClick={handleNextStage}
+              disabled={isUpdating}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+            >
+              {isUpdating ? (
+                <Loader size={14} className="animate-spin" />
+              ) : (
+                <>
+                  <span className="text-xs">{nextStage.label || `Move to ${nextStage.status}`}</span>
+                  <ChevronRight size={14} />
+                </>
+              )}
             </Button>
-          </SheetTrigger>
-          <SheetContent className="sm:max-w-md">
-            <SheetHeader className="space-y-3 pb-6 border-b">
-              <SheetTitle className="text-xl font-semibold">Update Order Item</SheetTitle>
-              <SheetDescription className="text-sm text-gray-600">
-                Manage status for {item.product?.name || item.item_number}
-              </SheetDescription>
-            </SheetHeader>
+          )}
 
-            <div className="space-y-6 py-6">
-              {/* Product Info Card */}
-              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl p-4 border border-teal-100">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{item.product?.name}</h4>
-                    <p className="text-xs text-gray-600 mt-0.5">{item.item_number}</p>
+          {/* Manual Update Sheet */}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-1.5">
+                <Settings size={14} />
+                <span className="hidden sm:inline">Customize</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-md">
+              <SheetHeader className="pb-6 border-b border-gray-200">
+                <SheetTitle className="text-xl font-semibold">Update Item Status</SheetTitle>
+                <SheetDescription className="text-sm text-gray-500">
+                  {item.product?.name || item.item_number}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-6 py-6">
+                {/* Workflow Progress Info */}
+                {nextStage && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-600 rounded-full p-2">
+                        <ArrowRight className="text-white w-4 h-4" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900">Next Stage Available</p>
+                        <p className="text-xs text-blue-700 mt-0.5">
+                          Click "Next Stage" to move to <span className="font-semibold">{nextStage.status}</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-teal-700">{item.item_price} dzd</p>
-                    <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
-                  </div>
-                </div>
-                {item.product?.description && (
-                  <p className="text-xs text-gray-700 bg-white/50 rounded-lg px-3 py-2">
-                    {item.product.description}
-                  </p>
                 )}
-              </div>
 
-              {/* File Upload Status Card */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    File Upload Status
-                  </span>
-                  {renderFileStatusBadge(fileStatus)}
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-sm">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                    {fileStatus === "uploaded" ? (
-                      <CheckCircle size={16} className="text-green-600" />
-                    ) : fileStatus === "uploading" ? (
-                      <Upload size={16} className="text-blue-600 animate-spin" />
-                    ) : fileStatus === "failed" ? (
-                      <XCircle size={16} className="text-red-600" />
-                    ) : (
-                      <Clock size={16} className="text-yellow-600" />
-                    )}
+                {/* Product Summary */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{item.product?.name}</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.item_number}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-gray-900">{item.item_price} DZD</p>
+                      <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate" title={fileName}>
-                      {fileName}
+                  {item.product?.description && (
+                    <p className="text-xs text-gray-600 mt-3 pt-3 border-t border-gray-200">
+                      {item.product.description}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {fileStatus === "uploaded" && "Ready to download"}
-                      {fileStatus === "uploading" && "Processing upload..."}
-                      {fileStatus === "pending" && "Queued for upload"}
-                      {fileStatus === "failed" && "Upload encountered an error"}
-                    </p>
-                  </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Item Status Update Section */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="status" className="text-sm font-semibold text-gray-900 mb-3 block">
-                    Update Item Status
+                {/* File Status */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium text-gray-500 uppercase">File Status</span>
+                    {renderFileStatusBadge(fileStatus)}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-200">
+                      {fileStatus === "uploaded" ? (
+                        <CheckCircle size={18} className="text-green-600" />
+                      ) : fileStatus === "uploading" ? (
+                        <Upload size={18} className="text-blue-600 animate-spin" />
+                      ) : fileStatus === "failed" ? (
+                        <XCircle size={18} className="text-red-600" />
+                      ) : (
+                        <Clock size={18} className="text-yellow-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate text-sm" title={fileName}>
+                        {fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {fileStatus === "uploaded" && "Ready to download"}
+                        {fileStatus === "uploading" && "Processing..."}
+                        {fileStatus === "pending" && "Queued"}
+                        {fileStatus === "failed" && "Error occurred"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Manual Status Update */}
+                <div className="space-y-3">
+                  <Label htmlFor="status" className="text-sm font-medium text-gray-900">
+                    Manual Status Override
                   </Label>
                   <Select value={itemStatus} onValueChange={setItemStatus}>
-                    <SelectTrigger className="w-full h-11 border-2 border-gray-200 hover:border-teal-400 focus:border-teal-500 transition-colors">
-                      <SelectValue placeholder="Select a status" />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending" className="cursor-pointer">
+                      <SelectItem value="pending">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                           <span>Pending</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="processing" className="cursor-pointer">
+                      <SelectItem value="ACCEPTED">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Accepted</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="REJECTED">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span>Rejected</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="WAIT_FOR_PROCESSING">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Waiting for Processing</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="processing">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
                           <span>Processing</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="shipped" className="cursor-pointer">
+                      <SelectItem value="printed">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span>Printed</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="shipped">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
                           <span>Shipped</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="delivered" className="cursor-pointer">
+                      <SelectItem value="delivred">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
                           <span>Delivered</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="cancelled" className="cursor-pointer">
+                      <SelectItem value="cancelled">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                           <span>Cancelled</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500">
+                    Use this to manually set any status, bypassing the workflow
+                  </p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
                   <SheetClose asChild>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 h-11 border-2 hover:bg-gray-50"
-                    >
+                    <Button variant="outline" className="flex-1">
                       Cancel
                     </Button>
                   </SheetClose>
                   <Button 
-                    type="button" 
                     onClick={handleUpdateItem} 
                     disabled={isUpdating}
-                    className="flex-1 h-11 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white font-medium shadow-lg shadow-teal-500/30"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
                   >
                     {isUpdating ? (
                       <>
@@ -321,15 +438,15 @@ function OrderDetailItemDetails({ item, onUpdateSuccess }) {
                     ) : (
                       <>
                         <CheckCircle size={16} className="mr-2" />
-                        Update Status
+                        Update
                       </>
                     )}
                   </Button>
                 </div>
               </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
+        </div>
       </td>
     </tr>
   );

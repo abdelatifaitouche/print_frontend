@@ -1,4 +1,5 @@
 import { Button } from "@/Components/ui/button";
+import { Card, CardContent } from "@/Components/ui/card";
 import {
   Select,
   SelectContent,
@@ -6,53 +7,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/Components/ui/select";
-import {getCompanies} from "@/Services/CompanyService";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/Components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/Components/ui/popover";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
+import { getCompanies } from "@/Services/CompanyService";
 import {
   AlertCircle,
-  Building2,
   Check,
-  Fingerprint,
   Loader2,
   Mail,
-  PersonStanding,
-  Phone,
-  Shield,
   UserPlus,
+  Shield,
+  Lock,
+  User,
+  CheckCircle,
+  ArrowLeft,
+  Building2,
+  ChevronsUpDown,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-
-import {createUser} from '@/Services/UsersService'
+import { useNavigate } from "react-router-dom";
+import { createUser } from "@/Services/UsersService";
+import { toast } from "sonner";
 
 function CreateUserPage() {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState("");
+  const [companyOpen, setCompanyOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     role: "",
+    company_id: "",
     password: "",
     password2: "",
   });
-/*
-  const fetchCompanies = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getCompanies();
-      setCompanies(response.response || []);
-    } catch (error) {
-      console.error("Failed to fetch companies:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
+  // Fetch companies
   useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        // Fetch all companies using all=True parameter
+        const response = await getCompanies({ all: true });
+        
+        // Extract companies array from response [companies, pagination]
+        const companiesList = Array.isArray(response) ? response[0] : response;
+        setCompanies(companiesList || []);
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+        toast.error("Failed to load companies");
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+
     fetchCompanies();
   }, []);
-*/
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -67,8 +94,10 @@ function CreateUserPage() {
     if (!formData.role) {
       newErrors.role = "Please select a role";
     }
-    
- 
+
+    if (!formData.company_id) {
+      newErrors.company_id = "Please select a company";
+    }
     
     if (!formData.password || formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
@@ -89,7 +118,6 @@ function CreateUserPage() {
       [name]: value,
     }));
     
-    // Clear error when user types
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -104,7 +132,6 @@ function CreateUserPage() {
       [name]: value,
     }));
     
-    // Clear error when user selects
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -116,267 +143,437 @@ function CreateUserPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Hide success message when trying to submit again
-    setSuccessMessage("");
-    
     if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
       return;
     }
     
     try {
       setIsLoading(true);
-      // Here you would add the API call to create the user
-      console.log("Form submitted:", formData);
-      const response = await createUser(formData);
+      await createUser(formData);
       
-      setSuccessMessage(`User ${formData.username} has been created successfully.`);
-
+      toast.success(`User ${formData.username} created successfully`);
+      
+      // Reset form
+      setFormData({
+        username: "",
+        email: "",
+        role: "",
+        company_id: "",
+        password: "",
+        password2: "",
+      });
+      setErrors({});
+      
+      // Optional: Navigate back to users list after 1 second
+      setTimeout(() => {
+        navigate("/users");
+      }, 1500);
       
     } catch (error) {
       console.error("Failed to create user:", error);
+      toast.error("Failed to create user. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      username: "",
-      email: "",
-      phone_number: "",
-      role: "",
-      company: 0,
-      password: "",
-      password2: "",
-    });
-    setErrors({});
-    setSuccessMessage("");
-  };
-
   const roleOptions = [
-    { value: "ADMIN", label: "Admin", description: "Full access to system settings" },
-    { value: "USER", label: "Operator", description: "Can manage daily operations" },
-    { value: "client", label: "Client", description: "Limited access to own resources" },
+    { 
+      value: "ADMIN", 
+      label: "Admin", 
+      description: "Full system access and management",
+      icon: Shield,
+      color: "text-purple-600"
+    },
+    { 
+      value: "USER", 
+      label: "User", 
+      description: "Can manage orders and operations",
+      icon: User,
+      color: "text-blue-600"
+    },
+    { 
+      value: "CLIENT", 
+      label: "Client", 
+      description: "Limited access to own orders",
+      icon: UserPlus,
+      color: "text-green-600"
+    },
   ];
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r  text-black py-6 px-8 shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <UserPlus className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Create New User</h1>
-              <p className="text-black-100 mt-1">
-                Add a new user to your organization
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} className="text-slate-600" />
+          </button>
+          
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-slate-900">Create New User</h1>
+            <p className="text-slate-600 mt-1">Add a new user to your organization</p>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <CheckCircle className="text-blue-600" size={16} />
+            <span className="text-sm text-blue-900 font-medium">New Account</span>
           </div>
         </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-md flex items-center">
-            <Check className="h-5 w-5 text-green-500 mr-3" />
-            <div>{successMessage}</div>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
-                
-                {/* Username Field */}
-                <div className="space-y-2">
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                    Username
-                  </label>
-                  <div className={`flex items-center border ${errors.username ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 bg-white focus-within:ring-2 ${errors.username ? 'focus-within:ring-red-500' : 'focus-within:ring-blue-500'}`}>
-                    <PersonStanding className={`${errors.username ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                    <input
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <User size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Basic Information</h2>
+                    <p className="text-sm text-slate-600">User identity and contact details</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Username */}
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-sm font-medium text-slate-700">
+                      Username *
+                    </Label>
+                    <Input
                       id="username"
                       name="username"
                       type="text"
                       value={formData.username}
                       onChange={handleChange}
                       placeholder="johndoe"
-                      className="w-full bg-transparent outline-none border-none focus:ring-0 text-sm placeholder-gray-400"
+                      className={`h-11 ${errors.username ? 'border-red-300 focus:ring-red-400' : 'border-slate-300'}`}
                     />
+                    {errors.username && (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.username}
+                      </div>
+                    )}
                   </div>
-                  {errors.username && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.username}
-                    </div>
-                  )}
-                </div>
 
-                {/* Email Field */}
-                <div className="space-y-2 mt-4">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <div className={`flex items-center border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 bg-white focus-within:ring-2 ${errors.email ? 'focus-within:ring-red-500' : 'focus-within:ring-blue-500'}`}>
-                    <Mail className={`${errors.email ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                    <input
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                      Email Address *
+                    </Label>
+                    <Input
                       id="email"
                       name="email"
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="john.doe@example.com"
-                      className="w-full bg-transparent outline-none border-none focus:ring-0 text-sm placeholder-gray-400"
+                      placeholder="john.doe@company.com"
+                      className={`h-11 ${errors.email ? 'border-red-300 focus:ring-red-400' : 'border-slate-300'}`}
                     />
+                    {errors.email && (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.email}
+                      </div>
+                    )}
                   </div>
-                  {errors.email && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.email}
-                    </div>
-                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Role & Permissions */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <Shield size={20} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Role & Permissions</h2>
+                    <p className="text-sm text-slate-600">Define user access level and organization</p>
+                  </div>
                 </div>
 
-              </div>
-            </div>
-              
-            {/* Middle Column */}
-            <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Organization Details</h2>
-                
-                {/* Role Select Field */}
-                <div className="space-y-2">
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                    User Role
-                  </label>
-                  <div className={`${errors.role ? 'ring-2 ring-red-500' : ''}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Role Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="role" className="text-sm font-medium text-slate-700">
+                      User Role *
+                    </Label>
                     <Select
                       value={formData.role}
                       onValueChange={(value) => handleSelectChange("role", value)}
                     >
-                      <SelectTrigger className={`w-full border ${errors.role ? 'border-red-500' : 'border-gray-300'} focus:ring-0`}>
-                        <div className="flex items-center">
-                          <Shield className={`${errors.role ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                          <SelectValue placeholder="Select a role" />
-                        </div>
+                      <SelectTrigger className={`h-11 ${errors.role ? 'border-red-300' : 'border-slate-300'}`}>
+                        <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {roleOptions.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div className="flex flex-col">
-                              <span>{role.label}</span>
-                              <span className="text-xs text-gray-500">{role.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                        {roleOptions.map((role) => {
+                          const Icon = role.icon;
+                          return (
+                            <SelectItem key={role.value} value={role.value}>
+                              <div className="flex items-center gap-3 py-1">
+                                <div className={`h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center`}>
+                                  <Icon size={16} className={role.color} />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-slate-900">{role.label}</div>
+                                  <div className="text-xs text-slate-500">{role.description}</div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
+                    {errors.role && (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.role}
+                      </div>
+                    )}
                   </div>
-                  {errors.role && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.role}
-                    </div>
-                  )}
+
+                  {/* Company Selection - Combobox */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">
+                      Company *
+                    </Label>
+                    <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={companyOpen}
+                          className={`w-full h-11 justify-between ${errors.company_id ? 'border-red-300' : 'border-slate-300'}`}
+                          disabled={isLoadingCompanies}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <Building2 size={16} className="text-slate-400 flex-shrink-0" />
+                            <span className="truncate">
+                              {formData.company_id
+                                ? companies.find((company) => company.id.toString() === formData.company_id)?.name
+                                : isLoadingCompanies ? "Loading..." : "Select company..."}
+                            </span>
+                          </div>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search companies..." />
+                          <CommandList>
+                            <CommandEmpty>No company found.</CommandEmpty>
+                            <CommandGroup>
+                              {companies.map((company) => (
+                                <CommandItem
+                                  key={company.id}
+                                  value={`${company.name} ${company.email || ''}`}
+                                  onSelect={() => {
+                                    handleSelectChange("company_id", company.id.toString());
+                                    setCompanyOpen(false);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                      <Building2 size={14} className="text-slate-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-slate-900 truncate">{company.name}</div>
+                                      {company.email && (
+                                        <div className="text-xs text-slate-500 truncate">{company.email}</div>
+                                      )}
+                                    </div>
+                                    <Check
+                                      className={`ml-auto h-4 w-4 ${
+                                        formData.company_id === company.id.toString()
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      }`}
+                                    />
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {errors.company_id && (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.company_id}
+                      </div>
+                    )}
+                    {isLoadingCompanies && (
+                      <div className="text-slate-500 text-xs flex items-center gap-1">
+                        <Loader2 size={12} className="animate-spin" />
+                        Loading companies...
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Company Select Field */}
-              </div>
-            </div>
-            
-            {/* Right Column */}
-            <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Security</h2>
-                
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Password
-                  </label>
-                  <div className={`flex items-center border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 bg-white focus-within:ring-2 ${errors.password ? 'focus-within:ring-red-500' : 'focus-within:ring-blue-500'}`}>
-                    <Fingerprint className={`${errors.password ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                    <input
+                {/* Role Info */}
+                {formData.role && (
+                  <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle size={16} className="text-slate-600 mt-0.5" />
+                      <div className="text-sm text-slate-700">
+                        <p className="font-medium mb-1">Role Permissions:</p>
+                        <ul className="space-y-1 text-slate-600">
+                          {formData.role === "ADMIN" && (
+                            <>
+                              <li>• Full system access and configuration</li>
+                              <li>• Manage all users and orders</li>
+                              <li>• View all analytics and reports</li>
+                            </>
+                          )}
+                          {formData.role === "USER" && (
+                            <>
+                              <li>• Manage orders and items</li>
+                              <li>• Accept/reject orders</li>
+                              <li>• Update order statuses</li>
+                            </>
+                          )}
+                          {formData.role === "CLIENT" && (
+                            <>
+                              <li>• View own orders only</li>
+                              <li>• Cancel pending orders</li>
+                              <li>• Download order files</li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Security */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                    <Lock size={20} className="text-green-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Security Credentials</h2>
+                    <p className="text-sm text-slate-600">Set initial password for the account</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                      Password *
+                    </Label>
+                    <Input
                       id="password"
                       name="password"
                       type="password"
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full bg-transparent outline-none border-none focus:ring-0 text-sm placeholder-gray-400"
+                      className={`h-11 ${errors.password ? 'border-red-300 focus:ring-red-400' : 'border-slate-300'}`}
                     />
+                    {errors.password ? (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.password}
+                      </div>
+                    ) : (
+                      <div className="text-slate-500 text-xs">
+                        Minimum 8 characters required
+                      </div>
+                    )}
                   </div>
-                  {errors.password ? (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.password}
-                    </div>
-                  ) : (
-                    <div className="text-gray-500 text-xs mt-1">
-                      Password must be at least 8 characters long
-                    </div>
-                  )}
-                </div>
 
-                {/* Confirm Password Field */}
-                <div className="space-y-2 mt-4">
-                  <label htmlFor="password2" className="block text-sm font-medium text-gray-700">
-                    Confirm Password
-                  </label>
-                  <div className={`flex items-center border ${errors.password2 ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 bg-white focus-within:ring-2 ${errors.password2 ? 'focus-within:ring-red-500' : 'focus-within:ring-blue-500'}`}>
-                    <Fingerprint className={`${errors.password2 ? 'text-red-400' : 'text-gray-400'} mr-2 w-5 h-5`} />
-                    <input
+                  {/* Confirm Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="password2" className="text-sm font-medium text-slate-700">
+                      Confirm Password *
+                    </Label>
+                    <Input
                       id="password2"
                       name="password2"
                       type="password"
                       value={formData.password2}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full bg-transparent outline-none border-none focus:ring-0 text-sm placeholder-gray-400"
+                      className={`h-11 ${errors.password2 ? 'border-red-300 focus:ring-red-400' : 'border-slate-300'}`}
                     />
+                    {errors.password2 && (
+                      <div className="text-red-600 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.password2}
+                      </div>
+                    )}
                   </div>
-                  {errors.password2 && (
-                    <div className="text-red-500 text-xs mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.password2}
-                    </div>
-                  )}
                 </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-8 border-t border-gray-200 pt-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <p className="text-sm text-gray-500 mb-4 sm:mb-0">
-                For better security, please ask the user to change their password after first login.
-              </p>
-              <div className="flex gap-3">
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700"
-                  type="submit"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Create User
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+
+                {/* Security Note */}
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle size={16} className="text-amber-600 mt-0.5" />
+                    <div className="text-sm text-amber-900">
+                      <p className="font-medium mb-1">Security Recommendation</p>
+                      <p className="text-amber-800">
+                        Ask the user to change their password immediately after first login for better security.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="text-sm text-slate-600">
+                    <p>All fields marked with * are required</p>
+                  </div>
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(-1)}
+                      className="flex-1 sm:flex-none border-slate-300"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={16} />
+                          Create User
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </form>
       </div>

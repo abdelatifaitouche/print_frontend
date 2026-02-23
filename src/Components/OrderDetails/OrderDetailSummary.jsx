@@ -1,77 +1,96 @@
 import React from "react";
-import { CheckCircle, Clock, XCircle } from "lucide-react";
+import { User, Building2, Mail, Phone, Calendar, DollarSign } from "lucide-react";
+import { Card, CardContent } from "@/Components/ui/card";
 
 function OrderDetailSummary({ orderDatas }) {
   if (!orderDatas) return null;
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return "bg-green-50 text-green-600";
-      case "pending":
-        return "bg-yellow-50 text-yellow-600";
-      case "cancelled":
-        return "bg-red-50 text-red-600";
-      default:
-        return "bg-gray-50 text-gray-600";
-    }
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 mb-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-           {orderDatas.order_number}
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">
-            Placed on {new Date(orderDatas.created_at).toLocaleString()}
-          </p>
-        </div>
-        <div>
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(orderDatas.status)}`}
-          >
-            {orderDatas.status === "completed" && <CheckCircle size={16} className="mr-1" />}
-            {orderDatas.status === "pending" && <Clock size={16} className="mr-1" />}
-            {orderDatas.status === "cancelled" && <XCircle size={16} className="mr-1" />}
-            {orderDatas.status}
-          </span>
-        </div>
-      </div>
+    <Card className="border-slate-200 shadow-sm mb-6">
+      <CardContent className="p-6">
+        <h2 className="text-lg font-semibold text-slate-900 mb-6">Order Information</h2>
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-200 pt-6">
-        {/* Customer Info */}
-        <div>
-          <h3 className="font-medium text-gray-700 mb-2">Customer</h3>
-          <div className="text-gray-600 text-sm space-y-1">
-            <div>{orderDatas.customer_name || orderDatas.created_by}</div>
-            <div>{orderDatas.customer_email || "customer@example.com"}</div>
-            <div>{orderDatas.customer_phone || "+1 555 555 555"}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Customer Info */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <User size={16} className="text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">Customer</h3>
+            </div>
+            <div className="space-y-3 pl-10">
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Name</p>
+                <p className="text-sm text-slate-900 font-medium">{orderDatas.creator?.username || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                <p className="text-sm text-slate-700">{orderDatas.creator?.email || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Phone</p>
+                <p className="text-sm text-slate-700">{orderDatas.creator?.phone || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Company Info */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <Building2 size={16} className="text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">Company</h3>
+            </div>
+            <div className="space-y-3 pl-10">
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Name</p>
+                <p className="text-sm text-slate-900 font-medium">{orderDatas.company?.name || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                <p className="text-sm text-slate-700">{orderDatas.company?.email || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Phone</p>
+                <p className="text-sm text-slate-700">{orderDatas.company?.phone || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Details */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <DollarSign size={16} className="text-green-600" />
+              </div>
+              <h3 className="font-semibold text-slate-900">Details</h3>
+            </div>
+            <div className="space-y-3 pl-10">
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Order Date</p>
+                <p className="text-sm text-slate-900 font-medium">
+                  {new Date(orderDatas.created_at).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Total Amount</p>
+                <p className="text-lg text-slate-900 font-bold">{orderDatas.order_price?.toLocaleString()} DZD</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Items</p>
+                <p className="text-sm text-slate-700">{orderDatas.items?.length || 0} item(s)</p>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Company Info */}
-        <div>
-          <h3 className="font-medium text-gray-700 mb-2">Company</h3>
-          <div className="text-gray-600 text-sm space-y-1">
-            <div>{orderDatas.company_name || "-"}</div>
-            <div>{orderDatas.company_email || "-"}</div>
-          </div>
-        </div>
-
-        {/* Payment Info */}
-        <div>
-          <h3 className="font-medium text-gray-700 mb-2">Payment Method</h3>
-          <div className="text-gray-600 text-sm space-y-1">
-            <div>{orderDatas.payment_method || "CCP"}</div>
-            <div>{orderDatas.payment_reference || "N/A"}</div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

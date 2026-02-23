@@ -1,9 +1,8 @@
-// OrderDetailHeader.jsx
-import React from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, Download, Trash2, Check, X, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { deleteOrder } from "@/Services/OrdersService";
+import { deleteOrder, acceptOrder, rejectOrder } from "@/Services/OrdersService";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -15,63 +14,234 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/Components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/Components/ui/dialog";
+import { Textarea } from "@/Components/ui/textarea";
+import { Label } from "@/Components/ui/label";
+import { Button } from "@/Components/ui/button";
 
-function OrderDetailHeader({ order_data }) {
-  if (!order_data) return null ; 
-  console.log(order_data.id)
+function OrderDetailHeader({ order_data, onStatusChange }) {
+  const [orderStatus, setOrderStatus] = useState(order_data?.status);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const navigate = useNavigate();
 
+  if (!order_data) return null;
+
+  const isPending = orderStatus?.toUpperCase() === "PENDING";
+  const isAccepted = orderStatus?.toUpperCase() === "ACCEPTED";
+  const isRejected = orderStatus?.toUpperCase() === "REJECTED";
+
+  const handleAcceptOrder = async () => {
+    setIsAccepting(true);
+    try {
+      await acceptOrder(order_data.id);
+      setOrderStatus("ACCEPTED");
+      toast.success("Order accepted");
+      onStatusChange?.();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to accept order");
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const handleRejectOrder = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a rejection reason");
+      return;
+    }
+
+    setIsRejecting(true);
+    try {
+      await rejectOrder(order_data.id, { reason: rejectionReason });
+      setOrderStatus("REJECTED");
+      setShowRejectDialog(false);
+      toast.success("Order rejected");
+      onStatusChange?.();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to reject order");
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-sm rounded-lg p-4 md:p-6 mb-4">
-      <div className="flex items-center w-full md:w-auto mb-2 md:mb-0">
+    <>
+      {/* Header */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="mr-3 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={20} className="text-slate-600" />
         </button>
-        <h1 className="text-2xl font-semibold text-gray-800 truncate">
-          {order_data.order_number}
-        </h1>
-      </div>
+        
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            {order_data.order_number}
+          </h1>
+          <p className="text-sm text-slate-600 mt-0.5">Order Details</p>
+        </div>
 
-      <div className="flex gap-2 w-full md:w-auto">
-        <AlertDialog>
-          <AlertDialogTrigger className="flex-1 md:flex-none px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition shadow-sm justify-center text-sm md:text-base">
-            Delete
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Deleting this order is permanent and cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="space-x-2">
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-red-500 hover:bg-red-600 text-white"
-                onClick={async () => {
-                  try {
-                    await deleteOrder(order_data.id);
-                    toast.success("Order deleted successfully");
-                    navigate(-1);
-                  } catch (error) {
-                    toast.error("Failed to delete order");
-                  }
-                }}
+        {/* Action Buttons */}
+        <div className="hidden sm:flex items-center gap-2 ml-auto">
+          {isPending && (
+            <>
+              <Button
+                onClick={handleAcceptOrder}
+                disabled={isAccepting}
+                className="bg-green-600 hover:bg-green-700 text-white gap-2"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                {isAccepting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Accepting...
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    Accept
+                  </>
+                )}
+              </Button>
 
-        <button className="flex-1 md:flex-none px-4 py-2 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200 transition shadow-sm justify-center flex items-center text-sm md:text-base">
-          <Download size={18} className="mr-2" /> Download
-        </button>
+              <Button
+                onClick={() => setShowRejectDialog(true)}
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-50 gap-2"
+              >
+                <X size={18} />
+                Reject
+              </Button>
+            </>
+          )}
+
+          {isAccepted && (
+            <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Check className="text-green-600 w-4 h-4" />
+                <span className="text-green-700 font-semibold text-sm">
+                  Accepted
+                </span>
+              </div>
+            </div>
+          )}
+
+          {isRejected && (
+            <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <X className="text-red-600 w-4 h-4" />
+                <span className="text-red-700 font-semibold text-sm">
+                  Rejected
+                </span>
+              </div>
+            </div>
+          )}
+
+          <Button variant="outline" className="border-slate-300 gap-2">
+            <Download size={18} />
+            Download
+          </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 gap-2">
+                <Trash2 size={18} />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete <span className="font-semibold">{order_data.order_number}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={async () => {
+                    try {
+                      await deleteOrder(order_data.id);
+                      toast.success("Order deleted");
+                      navigate(-1);
+                    } catch (error) {
+                      toast.error("Failed to delete order");
+                    }
+                  }}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
-    </div>
+
+      {/* Reject Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="text-red-600 w-5 h-5" />
+              Reject Order
+            </DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting <span className="font-semibold">{order_data.order_number}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejection-reason">Rejection Reason *</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="e.g., Out of stock, Invalid requirements..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectOrder}
+              disabled={isRejecting || !rejectionReason.trim()}
+            >
+              {isRejecting ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                <>
+                  <X size={16} className="mr-2" />
+                  Reject Order
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

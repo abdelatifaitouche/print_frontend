@@ -12,6 +12,8 @@ export default defineConfig({
     },
   },
   server: {
+        hmr: true, // Hot Module Replacement
+
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
