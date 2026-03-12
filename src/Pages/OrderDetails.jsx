@@ -1,19 +1,33 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { getOrderDetails } from "@/Services/OrdersService";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FileText, DollarSign } from "lucide-react";
 import { Button } from "@/Components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/Components/ui/tabs";
 import { toast } from "sonner";
 import OrderDetailHeader from "@/Components/OrderDetails/OrderDetailHeader";
 import OrderDetailSummary from "@/Components/OrderDetails/OrderDetailSummary";
 import OrderDetailItems from "@/Components/OrderDetails/OrderDetailItems";
 import OrderWorkflowTimeline from "@/Components/OrderDetails/OrderWorkflowTimeline";
-
+import OrderFinancialSection from "@/Components/OrderDetails/OrderFinancialSection";
+import AuthContext from "@/contexts/AuthContext";
+import { useContext } from "react";
 function OrderDetails() {
   const [orderData, setOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("details"); // "details" or "financial"
   const { id } = useParams();
+  const {profile ,  logout } = useContext(AuthContext);
+
+  // TODO: Get user role from your auth context
+  // Example: const { user } = useAuth();
+  // const userRole = user?.role || "USER";
+
+  // TODO: Get user role from your auth context
+  // Example: const { user } = useAuth();
+  // const userRole = user?.role || "USER";
+  const userRole = profile.role? profile.role : "USER"; // Replace with actual role from auth context
 
   const fetchOrderDetails = useCallback(async (showToast = false) => {
     if (showToast) {
@@ -92,6 +106,7 @@ function OrderDetails() {
           <OrderDetailHeader 
             order_data={orderData} 
             onStatusChange={handleUpdateSuccess}
+            userRole={userRole}
           />
           <Button
             variant="outline"
@@ -122,17 +137,56 @@ function OrderDetails() {
           </div>
         )}
 
-        {/* Workflow Timeline */}
-        <OrderWorkflowTimeline status={orderData?.status} />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-50 p-1">
+              <TabsTrigger 
+                value="details" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm gap-2"
+              >
+                <FileText size={16} />
+                <span className="hidden sm:inline">Order Details</span>
+                <span className="sm:hidden">Details</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="financial" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm gap-2"
+              >
+                <DollarSign size={16} />
+                <span className="hidden sm:inline">Quotes & Payments</span>
+                <span className="sm:hidden">Financial</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* Order Summary */}
-        <OrderDetailSummary orderDatas={orderData} />
+          {/* Order Details Tab */}
+          <TabsContent value="details" className="space-y-6 mt-0">
+            {/* Workflow Timeline */}
+            <OrderWorkflowTimeline status={orderData?.status} />
 
-        {/* Order Items */}
-        <OrderDetailItems 
-          orderDatas={orderData} 
-          onUpdateSuccess={handleUpdateSuccess}
-        />
+            {/* Order Summary */}
+            {
+              userRole == "ADMIN" ?            <OrderDetailSummary orderDatas={orderData} />
+:""
+            }
+
+            {/* Order Items */}
+            <OrderDetailItems 
+              orderDatas={orderData} 
+              onUpdateSuccess={handleUpdateSuccess}
+              userRole={userRole}
+            />
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-6 mt-0">
+            <OrderFinancialSection 
+              orderId={id}
+              orderData={orderData}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ import { Textarea } from "@/Components/ui/textarea";
 import { Label } from "@/Components/ui/label";
 import { Button } from "@/Components/ui/button";
 
-function OrderDetailHeader({ order_data, onStatusChange }) {
+function OrderDetailHeader({ order_data, onStatusChange , userRole}) {
   const [orderStatus, setOrderStatus] = useState(order_data?.status);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -96,7 +96,7 @@ function OrderDetailHeader({ order_data, onStatusChange }) {
 
         {/* Action Buttons */}
         <div className="hidden sm:flex items-center gap-2 ml-auto">
-          {isPending && (
+          {isPending && userRole == "ADMIN" && (
             <>
               <Button
                 onClick={handleAcceptOrder}
@@ -153,8 +153,8 @@ function OrderDetailHeader({ order_data, onStatusChange }) {
             <Download size={18} />
             Download
           </Button>
-
-          <AlertDialog>
+          {isPending && userRole == "ADMIN" && 
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 gap-2">
                 <Trash2 size={18} />
@@ -187,6 +187,43 @@ function OrderDetailHeader({ order_data, onStatusChange }) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          }
+          {
+            isPending && <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 gap-2">
+                <Trash2 size={18} />
+                Cancel
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete <span className="font-semibold">{order_data.order_number}</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={async () => {
+                    try {
+                      await deleteOrder(order_data.id);
+                      toast.success("Order deleted");
+                      navigate(-1);
+                    } catch (error) {
+                      toast.error("Failed to delete order");
+                    }
+                  }}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          }
+          
         </div>
       </div>
 

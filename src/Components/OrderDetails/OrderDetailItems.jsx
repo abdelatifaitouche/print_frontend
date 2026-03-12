@@ -16,6 +16,7 @@ import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
 import { nextStageOrderItem } from "@/Services/OrdersService";
+import OrderDetailItemDetails from "./OrderDetailItemDetails";
 
 function OrderDetailItems({ orderDatas, onUpdateSuccess }) {
   if (!orderDatas?.items?.length) {
@@ -43,7 +44,7 @@ function OrderDetailItems({ orderDatas, onUpdateSuccess }) {
 
         <div className="space-y-4">
           {orderDatas.items.map((item) => (
-            <OrderItemCard
+            <OrderDetailItemDetails
               key={item.id}
               item={item}
               onUpdateSuccess={onUpdateSuccess}

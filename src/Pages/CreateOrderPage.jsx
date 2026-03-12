@@ -52,7 +52,14 @@ function CreateOrderPage() {
   const addOrderItem = () => {
     setOrder((prev) => ({
       ...prev,
-      items: [...prev.items, { product_id: "", quantity: 1, file: null, filePreview: null, fileType: null }],
+      items: [...prev.items, { 
+        product_id: "", 
+        quantity: 1, 
+        format: "", 
+        file: null, 
+        filePreview: null, 
+        fileType: null 
+      }],
     }));
   };
 
@@ -119,11 +126,11 @@ function CreateOrderPage() {
     }
 
     const hasInvalidItem = order.items.some(
-      (item) => !item.product_id || !item.quantity || !item.file
+      (item) => !item.product_id || !item.quantity || !item.format || !item.file
     );
 
     if (hasInvalidItem) {
-      toast.error("Please fill in all fields and upload files for each item");
+      toast.error("Please fill in all fields, select a format, and upload files for each item");
       return;
     }
 
@@ -134,6 +141,7 @@ function CreateOrderPage() {
       const itemsData = order.items.map((item) => ({
         product_id: item.product_id,
         quantity: parseInt(item.quantity),
+        format: item.format,
       }));
 
       formData.append("items_data", JSON.stringify(itemsData));
@@ -353,6 +361,38 @@ function CreateOrderPage() {
                           onChange={(e) => updateItemData(index, "quantity", parseInt(e.target.value) || 1)}
                           className="h-11 border-slate-300"
                         />
+                      </div>
+                    </div>
+
+                    {/* Format Selection */}
+                    <div className="mb-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Print Format *
+                        </Label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {["GTO", "SM72", "SM74"].map((format) => (
+                            <button
+                              key={format}
+                              type="button"
+                              onClick={() => updateItemData(index, "format", format)}
+                              className={`p-3 rounded-lg border-2 transition-all ${
+                                item.format === format
+                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                              }`}
+                            >
+                              <div className="text-center">
+                                <div className="font-semibold">{format}</div>
+                                <div className="text-xs mt-1 opacity-80">
+                                  {format === "GTO" && "Standard"}
+                                  {format === "SM72" && "Medium"}
+                                  {format === "SM74" && "Large"}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 

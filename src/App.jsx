@@ -24,6 +24,7 @@ import RawMaterialDetailPage from "./Pages/Stock/rawMaterialDetailPage";
 import RawMaterialCreatePage from "./Pages/Stock/rawMaterialCreatePage";
 import ProductDetailPage from "./Pages/Products/productDetailPage";
 import ProductCreatePage from "./Pages/Products/productCreatePage";
+import PaymentPage from "./Pages/Finance/PaymentPage";
 
 function App() {
   return (
@@ -91,6 +92,14 @@ function App() {
             element={
               <PrivateRoute>
                 <CompanyDetailPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/payment"
+            element={
+              <PrivateRoute>
+                <PaymentPage />
               </PrivateRoute>
             }
           />

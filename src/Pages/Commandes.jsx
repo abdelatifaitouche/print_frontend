@@ -245,7 +245,7 @@ function Commandes() {
                 <TableRow 
                   key={order.id} 
                   className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/commandes/OrderDetails/${order.id}`, { state: { order } })}
+                  onClick={() => navigate(`/commandes/${order.id}`, { state: { order } })}
                 >
                   <TableCell className="whitespace-nowrap">
                     <div className="font-medium text-slate-900">{order.order_number}</div>
